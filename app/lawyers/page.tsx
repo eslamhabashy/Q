@@ -39,6 +39,8 @@ import {
   Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/components/providers/language-provider";
+import { useTheme } from "next-themes";
 
 interface Lawyer {
   id: string;
@@ -198,24 +200,17 @@ const locations = [
 ];
 
 export default function LawyersPage() {
-  const [language, setLanguage] = useState<"en" | "ar">("en");
-  const [isDark, setIsDark] = useState(false);
+  const { language, setLanguage } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedLawyer, setSelectedLawyer] = useState<Lawyer | null>(null);
   const isRTL = language === "ar";
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setIsDark(true);
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
+  const isDark = theme === "dark";
 
   const handleThemeToggle = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle("dark");
+    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   const content = {

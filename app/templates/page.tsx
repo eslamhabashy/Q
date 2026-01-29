@@ -30,6 +30,8 @@ import {
   Sun,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/components/providers/language-provider";
+import { useTheme } from "next-themes";
 
 interface Template {
   id: string;
@@ -174,23 +176,16 @@ const categories = [
 ];
 
 export default function TemplatesPage() {
-  const [language, setLanguage] = useState<"en" | "ar">("en");
-  const [isDark, setIsDark] = useState(false);
+  const { language, setLanguage } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const isRTL = language === "ar";
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setIsDark(true);
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
+  const isDark = theme === "dark";
 
   const handleThemeToggle = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle("dark");
+    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   const content = {
@@ -316,7 +311,7 @@ export default function TemplatesPage() {
                 onClick={() => setSelectedCategory(category.id)}
                 className={cn(
                   selectedCategory === category.id &&
-                    "bg-accent text-accent-foreground hover:bg-accent/90"
+                  "bg-accent text-accent-foreground hover:bg-accent/90"
                 )}
               >
                 <category.icon className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />

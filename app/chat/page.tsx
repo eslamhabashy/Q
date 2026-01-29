@@ -72,6 +72,7 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isRTL = language === "ar";
+  const isDark = theme === "dark";
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -201,9 +202,10 @@ Once I have more context, I can provide relevant information about:
       ) {
         response = content.rental;
       } else if (
-        lowerMessage.includes("divorce") ||
-        lowerMessage.includes("طلاق")
+        (lowerMessage.includes("divorce") || lowerMessage.includes("طلاق")) &&
+        "divorce" in content
       ) {
+        // @ts-ignore
         response = content.divorce || content.default;
       }
 
