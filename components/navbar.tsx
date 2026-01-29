@@ -12,21 +12,18 @@ import {
 import { Scale, Menu, X, Globe, User, Moon, Sun, LogOut } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 
-interface NavbarProps {
-  language: "en" | "ar";
-  onLanguageChange: (lang: "en" | "ar") => void;
-  isDark: boolean;
-  onThemeToggle: () => void;
-}
+import { useLanguage } from "@/components/providers/language-provider";
+import { useTheme } from "next-themes";
 
-export function Navbar({
-  language,
-  onLanguageChange,
-  isDark,
-  onThemeToggle,
-}: NavbarProps) {
+export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const { language, setLanguage } = useLanguage();
+  const { theme, setTheme } = useTheme();
+
+  const onLanguageChange = (lang: "en" | "ar") => setLanguage(lang);
+  const onThemeToggle = () => setTheme(theme === "dark" ? "light" : "dark");
+  const isDark = theme === "dark";
 
   const navItems = {
     en: {

@@ -17,12 +17,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar
-        language={language}
-        onLanguageChange={setLanguage}
-        isDark={theme === "dark"}
-        onThemeToggle={() => setTheme(theme === "dark" ? "light" : "dark")}
-      />
+      <Navbar />
       <main>
         <HeroSection language={language} />
         <FeaturesSection language={language} />

@@ -17,7 +17,7 @@ interface LanguageProviderState {
 }
 
 const initialState: LanguageProviderState = {
-  language: "en",
+  language: "ar",
   setLanguage: () => null,
   t: (key) => key,
   dir: "ltr",
@@ -27,7 +27,7 @@ const LanguageProviderContext = createContext<LanguageProviderState>(initialStat
 
 export function LanguageProvider({
   children,
-  defaultLanguage = "en",
+  defaultLanguage = "ar",
 }: LanguageProviderProps) {
   const [language, setLanguage] = useState<Language>(defaultLanguage)
   const [mounted, setMounted] = useState(false)
@@ -48,7 +48,7 @@ export function LanguageProvider({
     }
   }, [language, mounted])
 
-  const dir = language === "ar" ? "rtl" : "ltr"
+  const dir: "ltr" | "rtl" = language === "ar" ? "rtl" : "ltr"
 
   // Simple translation placeholder - in a real app this would use a dictionary
   const t = (key: string) => key
