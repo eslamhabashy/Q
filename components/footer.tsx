@@ -85,7 +85,7 @@ export function Footer({ language }: FooterProps) {
                 <Scale className="h-5 w-5 text-accent-foreground" />
               </div>
               <span className="text-xl font-bold text-primary-foreground">
-                {language === "ar" ? "حقّي" : "Haqqi"}
+                {language === "ar" ? "قانونك" : "Qanunak"}
               </span>
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-primary-foreground/70">

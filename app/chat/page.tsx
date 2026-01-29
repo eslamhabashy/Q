@@ -246,12 +246,12 @@ Once I have more context, I can provide relevant information about:
 
   const content = {
     en: {
-      title: "Haqqi",
+      title: "Qanunak",
       newChat: "New Chat",
       requestLawyer: "Request Lawyer Review",
     },
     ar: {
-      title: "حقّي",
+      title: "قانونك",
       newChat: "محادثة جديدة",
       requestLawyer: "طلب مراجعة محامٍ",
     },

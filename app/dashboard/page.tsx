@@ -222,7 +222,7 @@ export default function DashboardPage() {
               <Scale className="h-5 w-5 text-sidebar-primary-foreground" />
             </div>
             <span className="text-xl font-bold text-sidebar-foreground">
-              {language === "ar" ? "حقّي" : "Haqqi"}
+              {language === "ar" ? "قانونك" : "Qanunak"}
             </span>
           </Link>
           <Button

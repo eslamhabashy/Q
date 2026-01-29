@@ -21,7 +21,7 @@ export function TestimonialsSection({ language }: TestimonialsSectionProps) {
           role: "Small Business Owner",
           location: "Cairo",
           content:
-            "Haqqi helped me understand my rights when dealing with a commercial lease dispute. The AI explained everything clearly and even provided template letters I could use.",
+            "Qanunak helped me understand my rights when dealing with a commercial lease dispute. The AI explained everything clearly and even provided template letters I could use.",
           rating: 5,
         },
         {
@@ -29,7 +29,7 @@ export function TestimonialsSection({ language }: TestimonialsSectionProps) {
           role: "Teacher",
           location: "Alexandria",
           content:
-            "I was worried about my employment contract renewal. Haqqi broke down the labor law sections relevant to my case and gave me confidence to negotiate better terms.",
+            "I was worried about my employment contract renewal. Qanunak broke down the labor law sections relevant to my case and gave me confidence to negotiate better terms.",
           rating: 5,
         },
         {
@@ -45,7 +45,7 @@ export function TestimonialsSection({ language }: TestimonialsSectionProps) {
           role: "University Student",
           location: "Mansoura",
           content:
-            "As a student, I couldn't afford expensive legal consultations. Haqqi helped me understand my tenant rights when my landlord tried to illegally evict me.",
+            "As a student, I couldn't afford expensive legal consultations. Qanunak helped me understand my tenant rights when my landlord tried to illegally evict me.",
           rating: 5,
         },
       ],
@@ -59,7 +59,7 @@ export function TestimonialsSection({ language }: TestimonialsSectionProps) {
           role: "صاحب مشروع صغير",
           location: "القاهرة",
           content:
-            "ساعدني حقي في فهم حقوقي عند التعامل مع نزاع إيجار تجاري. شرح الذكاء الاصطناعي كل شيء بوضوح وقدم لي حتى نماذج رسائل يمكنني استخدامها.",
+            "ساعدني قانونك في فهم حقوقي عند التعامل مع نزاع إيجار تجاري. شرح الذكاء الاصطناعي كل شيء بوضوح وقدم لي حتى نماذج رسائل يمكنني استخدامها.",
           rating: 5,
         },
         {
@@ -67,7 +67,7 @@ export function TestimonialsSection({ language }: TestimonialsSectionProps) {
           role: "معلمة",
           location: "الإسكندرية",
           content:
-            "كنت قلقة بشأن تجديد عقد عملي. قام حقي بتفصيل أقسام قانون العمل المتعلقة بحالتي وأعطاني الثقة للتفاوض على شروط أفضل.",
+            "كنت قلقة بشأن تجديد عقد عملي. قام قانونك بتفصيل أقسام قانون العمل المتعلقة بحالتي وأعطاني الثقة للتفاوض على شروط أفضل.",
           rating: 5,
         },
         {
@@ -83,7 +83,7 @@ export function TestimonialsSection({ language }: TestimonialsSectionProps) {
           role: "طالبة جامعية",
           location: "المنصورة",
           content:
-            "كطالبة، لم أستطع تحمل تكلفة الاستشارات القانونية باهظة الثمن. ساعدني حقي في فهم حقوقي كمستأجرة عندما حاول مالك العقار طردي بشكل غير قانوني.",
+            "كطالبة، لم أستطع تحمل تكلفة الاستشارات القانونية باهظة الثمن. ساعدني قانونك في فهم حقوقي كمستأجرة عندما حاول مالك العقار طردي بشكل غير قانوني.",
           rating: 5,
         },
       ],

@@ -15,7 +15,7 @@ const _notoNaskhArabic = Noto_Naskh_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "Haqqi - AI Legal Advisor | Your Legal Rights in Egypt",
+  title: "Qanunak - AI Legal Advisor | Your Legal Rights in Egypt",
   description:
     "Get instant legal guidance on Egyptian law. AI-powered legal information for rental rights, employment contracts, family law, and more. Available 24/7.",
   keywords: [
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     "rental rights Egypt",
     "employment law Egypt",
     "AI legal advisor",
-    "حقي",
+    "قانونك",
   ],
   generator: "v0.app",
   icons: {

@@ -224,7 +224,7 @@ export default function LawyersPage() {
       yearsExp: "years experience",
       reviews: "reviews",
       perHour: "/hour",
-      verified: "Verified by Haqqi",
+      verified: "Verified by Qanunak",
       available: "Available",
       unavailable: "Unavailable",
       requestConsultation: "Request Consultation",
@@ -253,7 +253,7 @@ export default function LawyersPage() {
       yearsExp: "سنوات خبرة",
       reviews: "تقييمات",
       perHour: "/ساعة",
-      verified: "موثق من حقي",
+      verified: "موثق من قانونك",
       available: "متاح",
       unavailable: "غير متاح",
       requestConsultation: "طلب استشارة",
@@ -310,7 +310,7 @@ export default function LawyersPage() {
               <Scale className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold text-foreground">
-              {language === "ar" ? "حقّي" : "Haqqi"}
+              {language === "ar" ? "قانونك" : "Qanunak"}
             </span>
           </Link>
 

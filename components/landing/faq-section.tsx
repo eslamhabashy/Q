@@ -22,7 +22,7 @@ export function FAQSection({ language }: FAQSectionProps) {
         {
           question: "Is this considered legal advice?",
           answer:
-            "No. Haqqi provides legal information and educational content about Egyptian law. This is not legal advice and should not be treated as such. We always recommend consulting with a licensed attorney for your specific legal situation. Our AI assistant helps you understand general legal concepts and your basic rights under Egyptian law.",
+            "No. Qanunak provides legal information and educational content about Egyptian law. This is not legal advice and should not be treated as such. We always recommend consulting with a licensed attorney for your specific legal situation. Our AI assistant helps you understand general legal concepts and your basic rights under Egyptian law.",
         },
         {
           question: "How accurate is the legal information provided?",
@@ -30,9 +30,9 @@ export function FAQSection({ language }: FAQSectionProps) {
             "Our AI is trained on Egyptian legal codes, regulations, and established legal precedents. While we strive for accuracy, laws can change and individual circumstances vary. The information provided should be used as a starting point for understanding your situation, not as definitive legal guidance.",
         },
         {
-          question: "Can Haqqi represent me in court?",
+          question: "Can Qanunak represent me in court?",
           answer:
-            "No. Haqqi is an information service, not a law firm. We cannot represent you in legal proceedings. However, our Premium plan includes access to our network of verified lawyers who can provide professional representation if needed.",
+            "No. Qanunak is an information service, not a law firm. We cannot represent you in legal proceedings. However, our Premium plan includes access to our network of verified lawyers who can provide professional representation if needed.",
         },
         {
           question: "Is my information kept confidential?",
@@ -40,9 +40,9 @@ export function FAQSection({ language }: FAQSectionProps) {
             "Yes. We take privacy seriously. Your conversations are encrypted and stored securely. We do not share your personal information or conversation history with third parties. You can delete your data at any time from your account settings.",
         },
         {
-          question: "What types of legal matters does Haqqi cover?",
+          question: "What types of legal matters does Qanunak cover?",
           answer:
-            "Haqqi covers common legal matters under Egyptian law including: labor and employment law, rental and real estate disputes, family law (marriage, divorce, custody), business formation and contracts, traffic violations, consumer rights, and civil disputes.",
+            "Qanunak covers common legal matters under Egyptian law including: labor and employment law, rental and real estate disputes, family law (marriage, divorce, custody), business formation and contracts, traffic violations, consumer rights, and civil disputes.",
         },
         {
           question: "Can I use the document templates for official purposes?",
@@ -58,7 +58,7 @@ export function FAQSection({ language }: FAQSectionProps) {
         {
           question: "هل يعتبر هذا استشارة قانونية؟",
           answer:
-            "لا. يقدم حقي معلومات قانونية ومحتوى تعليمي حول القانون المصري. هذه ليست استشارة قانونية ولا يجب التعامل معها على هذا الأساس. نوصي دائماً باستشارة محامٍ مرخص لوضعك القانوني المحدد. يساعدك مساعدنا الذكي على فهم المفاهيم القانونية العامة وحقوقك الأساسية بموجب القانون المصري.",
+            "لا. يقدم قانونك معلومات قانونية ومحتوى تعليمي حول القانون المصري. هذه ليست استشارة قانونية ولا يجب التعامل معها على هذا الأساس. نوصي دائماً باستشارة محامٍ مرخص لوضعك القانوني المحدد. يساعدك مساعدنا الذكي على فهم المفاهيم القانونية العامة وحقوقك الأساسية بموجب القانون المصري.",
         },
         {
           question: "ما مدى دقة المعلومات القانونية المقدمة؟",
@@ -66,9 +66,9 @@ export function FAQSection({ language }: FAQSectionProps) {
             "تم تدريب ذكائنا الاصطناعي على القوانين واللوائح المصرية والسوابق القانونية المعتمدة. بينما نسعى للدقة، قد تتغير القوانين وتختلف الظروف الفردية. يجب استخدام المعلومات المقدمة كنقطة انطلاق لفهم وضعك، وليس كتوجيه قانوني نهائي.",
         },
         {
-          question: "هل يمكن لحقي تمثيلي في المحكمة؟",
+          question: "هل يمكن لقانونك تمثيلي في المحكمة؟",
           answer:
-            "لا. حقي هو خدمة معلومات، وليس مكتب محاماة. لا يمكننا تمثيلك في الإجراءات القانونية. ومع ذلك، تتضمن خطتنا المميزة الوصول إلى شبكتنا من المحامين الموثقين الذين يمكنهم تقديم التمثيل المهني إذا لزم الأمر.",
+            "لا. قانونك هو خدمة معلومات، وليس مكتب محاماة. لا يمكننا تمثيلك في الإجراءات القانونية. ومع ذلك، تتضمن خطتنا المميزة الوصول إلى شبكتنا من المحامين الموثقين الذين يمكنهم تقديم التمثيل المهني إذا لزم الأمر.",
         },
         {
           question: "هل معلوماتي محفوظة بسرية؟",
@@ -76,9 +76,9 @@ export function FAQSection({ language }: FAQSectionProps) {
             "نعم. نحن نأخذ الخصوصية على محمل الجد. محادثاتك مشفرة ومخزنة بشكل آمن. لا نشارك معلوماتك الشخصية أو سجل محادثاتك مع أطراف ثالثة. يمكنك حذف بياناتك في أي وقت من إعدادات حسابك.",
         },
         {
-          question: "ما أنواع المسائل القانونية التي يغطيها حقي؟",
+          question: "ما أنواع المسائل القانونية التي يغطيها قانونك؟",
           answer:
-            "يغطي حقي المسائل القانونية الشائعة بموجب القانون المصري بما في ذلك: قانون العمل والتوظيف، نزاعات الإيجار والعقارات، قانون الأسرة (الزواج والطلاق والحضانة)، تأسيس الأعمال والعقود، مخالفات المرور، حقوق المستهلك، والنزاعات المدنية.",
+            "يغطي قانونك المسائل القانونية الشائعة بموجب القانون المصري بما في ذلك: قانون العمل والتوظيف، نزاعات الإيجار والعقارات، قانون الأسرة (الزواج والطلاق والحضانة)، تأسيس الأعمال والعقود، مخالفات المرور، حقوق المستهلك، والنزاعات المدنية.",
         },
         {
           question: "هل يمكنني استخدام نماذج المستندات لأغراض رسمية؟",
