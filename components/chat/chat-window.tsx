@@ -33,14 +33,14 @@ export function ChatWindow({
 
   const content = {
     en: {
-      welcome: "Welcome to Haqqi",
+      welcome: "Welcome to Qanunak",
       subtitle: "Your AI Legal Information Assistant",
       description:
         "Ask me any question about Egyptian law. I can help you understand your rights regarding rental agreements, employment contracts, family matters, and more.",
       suggested: "Popular Questions",
     },
     ar: {
-      welcome: "مرحباً بك في حقي",
+      welcome: "مرحباً بك في قانونك",
       subtitle: "مساعدك الذكي للمعلومات القانونية",
       description:
         "اسألني أي سؤال عن القانون المصري. يمكنني مساعدتك في فهم حقوقك المتعلقة بعقود الإيجار وعقود العمل والشؤون الأسرية والمزيد.",

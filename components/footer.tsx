@@ -15,7 +15,7 @@ export function Footer({ language }: FooterProps) {
       description:
         "AI-powered legal information for everyday Egyptians. Understand your rights and navigate common legal matters with confidence.",
       disclaimer:
-        "Haqqi provides legal information for educational purposes only. This is not legal advice and does not create an attorney-client relationship. Always consult a licensed attorney for your specific legal needs.",
+        "Qanunak provides legal information for educational purposes only. This is not legal advice and does not create an attorney-client relationship. Always consult a licensed attorney for your specific legal needs.",
       product: "Product",
       productLinks: [
         { label: "Features", href: "#features" },
@@ -36,14 +36,14 @@ export function Footer({ language }: FooterProps) {
         { label: "Terms of Service", href: "/terms" },
         { label: "Disclaimer", href: "/disclaimer" },
       ],
-      copyright: "© 2025 Haqqi. All rights reserved.",
+      copyright: "© 2025 Qanunak. All rights reserved.",
       madeWith: "Made with care in Egypt",
     },
     ar: {
       description:
         "معلومات قانونية مدعومة بالذكاء الاصطناعي للمصريين العاديين. افهم حقوقك وتعامل مع المسائل القانونية الشائعة بثقة.",
       disclaimer:
-        "يقدم حقي معلومات قانونية لأغراض تعليمية فقط. هذه ليست استشارة قانونية ولا تنشئ علاقة محامي-موكل. استشر دائماً محامياً مرخصاً لاحتياجاتك القانونية المحددة.",
+        "يقدم قانونك معلومات قانونية لأغراض تعليمية فقط. هذه ليست استشارة قانونية ولا تنشئ علاقة محامي-موكل. استشر دائماً محامياً مرخصاً لاحتياجاتك القانونية المحددة.",
       product: "المنتج",
       productLinks: [
         { label: "المميزات", href: "#features" },
@@ -64,7 +64,7 @@ export function Footer({ language }: FooterProps) {
         { label: "شروط الخدمة", href: "/terms" },
         { label: "إخلاء المسؤولية", href: "/disclaimer" },
       ],
-      copyright: "© 2025 حقي. جميع الحقوق محفوظة.",
+      copyright: "© 2025 قانونك. جميع الحقوق محفوظة.",
       madeWith: "صنع بعناية في مصر",
     },
   };

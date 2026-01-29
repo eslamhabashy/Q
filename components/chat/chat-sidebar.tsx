@@ -95,7 +95,7 @@ export function ChatSidebar({
             <Scale className="h-4 w-4 text-sidebar-primary-foreground" />
           </div>
           <span className="font-semibold text-sidebar-foreground">
-            {language === "ar" ? "حقّي" : "Haqqi"}
+            {language === "ar" ? "قانونك" : "Qanunak"}
           </span>
         </Link>
         <Button
