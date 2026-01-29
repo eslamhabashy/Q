@@ -10,6 +10,9 @@ import { Scale, Menu, X, Globe, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/components/providers/auth-provider";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 interface Message {
   id: string;
@@ -49,31 +52,127 @@ const suggestedQuestions = {
 export default function ChatPage() {
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
+  const supabase = createClient();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [conversations, setConversations] = useState<Conversation[]>([
-    {
-      id: "1",
-      title: "Rental Agreement Question",
-      preview: "What are my rights as a tenant if...",
-      timestamp: new Date(Date.now() - 86400000),
-      messages: [],
-    },
-    {
-      id: "2",
-      title: "Employment Contract",
-      preview: "Is it legal for my employer to...",
-      timestamp: new Date(Date.now() - 172800000),
-      messages: [],
-    },
-  ]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [remainingQuestions, setRemainingQuestions] = useState(3);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [showSubscriptionPrompt, setShowSubscriptionPrompt] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isRTL = language === "ar";
   const isDark = theme === "dark";
 
+  // Redirect if not authenticated (backup to middleware)
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login?redirect=/chat');
+    }
+  }, [user, authLoading, router]);
+
+  // Load user conversations from Supabase
+  useEffect(() => {
+    if (!user) return;
+
+    const loadConversations = async () => {
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading conversations:', error);
+        return;
+      }
+
+      // Transform database conversations to UI format
+      const transformedConversations: Conversation[] = await Promise.all(
+        (data || []).map(async (conv) => {
+          // Load messages for this conversation
+          const { data: messagesData } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: true });
+
+          const messages: Message[] = (messagesData || []).map((msg) => ({
+            id: msg.id,
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+            timestamp: new Date(msg.created_at),
+          }));
+
+          // Generate preview from first user message
+          const firstUserMessage = messages.find(m => m.role === 'user');
+          const preview = firstUserMessage
+            ? firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
+            : 'New conversation';
+
+          return {
+            id: conv.id,
+            title: conv.title,
+            preview,
+            timestamp: new Date(conv.updated_at),
+            messages,
+          };
+        })
+      );
+
+      setConversations(transformedConversations);
+
+      // Set active conversation if we have one
+      if (transformedConversations.length > 0 && !activeConversationId) {
+        setActiveConversationId(transformedConversations[0].id);
+        setMessages(transformedConversations[0].messages);
+      }
+    };
+
+    loadConversations();
+  }, [user, supabase]);
+
+  // Load and check user's daily usage
+  useEffect(() => {
+    if (!user) return;
+
+    const checkDailyUsage = async () => {
+      try {
+        // Call the check_and_reset_daily_usage function
+        const { data, error } = await supabase.rpc('check_and_reset_daily_usage', {
+          p_user_id: user.id
+        });
+
+        if (error) {
+          console.error('Error checking daily usage:', error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const usage = data[0];
+          const remaining = Math.max(0, 3 - usage.messages_sent);
+          setRemainingQuestions(remaining);
+          setIsSubscribed(usage.is_subscribed);
+
+          // Show prompt if limit reached and not subscribed
+          if (remaining === 0 && !usage.is_subscribed) {
+            setShowSubscriptionPrompt(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error in checkDailyUsage:', error);
+      }
+    };
+
+    checkDailyUsage();
+  }, [user, supabase]);
+
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -82,7 +181,7 @@ export default function ChatPage() {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
-  const simulateAIResponse = (userMessage: string) => {
+  const simulateAIResponse = async (userMessage: string, conversationId: string) => {
     setIsTyping(true);
 
     const responses = {
@@ -188,7 +287,7 @@ Once I have more context, I can provide relevant information about:
       },
     };
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const content = responses[language];
       let response = content.default;
 
@@ -216,13 +315,39 @@ Once I have more context, I can provide relevant information about:
         timestamp: new Date(),
       };
 
+      // Update UI
       setMessages((prev) => [...prev, aiMessage]);
       setIsTyping(false);
+
+      // Save AI message to database
+      try {
+        await supabase
+          .from('messages')
+          .insert({
+            conversation_id: conversationId,
+            role: 'assistant',
+            content: response,
+          });
+
+        // Update conversation timestamp
+        await supabase
+          .from('conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', conversationId);
+      } catch (error) {
+        console.error('Error saving AI message:', error);
+      }
     }, 1500);
   };
 
-  const handleSendMessage = (content: string) => {
-    if (!content.trim()) return;
+  const handleSendMessage = async (content: string) => {
+    if (!content.trim() || !user) return;
+
+    // Check daily limit (unless subscribed)
+    if (!isSubscribed && remainingQuestions <= 0) {
+      setShowSubscriptionPrompt(true);
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -231,9 +356,102 @@ Once I have more context, I can provide relevant information about:
       timestamp: new Date(),
     };
 
+    // Optimistically update UI
     setMessages((prev) => [...prev, userMessage]);
-    setRemainingQuestions((prev) => Math.max(0, prev - 1));
-    simulateAIResponse(content);
+
+    try {
+      let conversationId = activeConversationId;
+
+      // Create new conversation if none exists
+      if (!conversationId) {
+        // Generate title from first message
+        const title = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+
+        console.log('Attempting to create conversation with user_id:', user.id);
+
+        const { data: newConv, error: convError } = await supabase
+          .from('conversations')
+          .insert({
+            user_id: user.id,
+            title: title,
+          })
+          .select()
+          .single();
+
+        if (convError) {
+          console.error('Error creating conversation:', convError);
+          console.error('Error details:', JSON.stringify(convError, null, 2));
+          console.error('Error message:', convError.message);
+          console.error('Error code:', convError.code);
+          return;
+        }
+
+        console.log('Conversation created successfully:', newConv);
+
+        conversationId = newConv.id;
+        setActiveConversationId(conversationId);
+
+        // Add to conversations list
+        const newConversation: Conversation = {
+          id: conversationId,
+          title: title,
+          preview: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
+          timestamp: new Date(),
+          messages: [userMessage],
+        };
+        setConversations((prev) => [newConversation, ...prev]);
+      } else {
+        // Update existing conversation timestamp
+        await supabase
+          .from('conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', conversationId);
+      }
+
+      // Save user message to database
+      const { error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          role: 'user',
+          content: content,
+        });
+
+      if (msgError) {
+        console.error('Error saving user message:', msgError);
+        return;
+      }
+
+      // Increment message count in database (unless subscribed)
+      if (!isSubscribed) {
+        try {
+          const { data: newCount, error: countError } = await supabase.rpc('increment_message_count', {
+            p_user_id: user.id
+          });
+
+          if (!countError && newCount !== null) {
+            const remaining = Math.max(0, 3 - newCount);
+            setRemainingQuestions(remaining);
+
+            // Show subscription prompt if limit reached
+            if (remaining === 0) {
+              setShowSubscriptionPrompt(true);
+            }
+          }
+        } catch (error) {
+          console.error('Error incrementing message count:', error);
+        }
+      }
+
+      // Generate AI response - conversationId is guaranteed to be string at this point
+      if (conversationId) {
+        await simulateAIResponse(content, conversationId);
+      }
+
+
+    } catch (error) {
+      console.error('Error in handleSendMessage:', error);
+    }
   };
 
   const handleSuggestedQuestion = (question: string) => {
@@ -242,6 +460,7 @@ Once I have more context, I can provide relevant information about:
 
   const handleNewChat = () => {
     setMessages([]);
+    setActiveConversationId(null);
   };
 
   const content = {
@@ -338,6 +557,37 @@ Once I have more context, I can provide relevant information about:
 
         {/* Chat Input */}
         <ChatInput language={language} onSend={handleSendMessage} />
+
+        {/* Subscription Prompt Modal */}
+        {showSubscriptionPrompt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowSubscriptionPrompt(false)}>
+            <div className="bg-card border border-border rounded-lg p-6 max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-bold mb-3 text-card-foreground">
+                {language === "ar" ? "لقد وصلت إلى الحد اليومي" : "Daily Limit Reached"}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {language === "ar"
+                  ? "لقد استخدمت جميع الرسائل المجانية الثلاث لليوم. اشترك للحصول على رسائل غير محدودة والمزيد من الميزات!"
+                  : "You've used all 3 free messages for today. Subscribe for unlimited messages and premium features!"}
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => router.push('/pricing')}
+                  className="flex-1"
+                >
+                  {language === "ar" ? "عرض الخطط" : "View Plans"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubscriptionPrompt(false)}
+                  className="flex-1"
+                >
+                  {language === "ar" ? "إغلاق" : "Close"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

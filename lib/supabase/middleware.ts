@@ -40,15 +40,19 @@ export async function updateSession(request: NextRequest) {
     if (
         !user &&
         !request.nextUrl.pathname.startsWith('/login') &&
-        !request.nextUrl.pathname.startsWith('/auth') &&
-        !request.nextUrl.pathname.startsWith('/') &&
-        !request.nextUrl.pathname.startsWith('/templates') &&
-        !request.nextUrl.pathname.startsWith('/lawyers')
+        !request.nextUrl.pathname.startsWith('/signup') &&
+        !request.nextUrl.pathname.startsWith('/auth')
     ) {
-        // no user, potentially respond by redirecting the user to the login page
-        const url = request.nextUrl.clone()
-        url.pathname = '/login'
-        return NextResponse.redirect(url)
+        // Protect /chat and /dashboard routes - redirect to login
+        if (
+            request.nextUrl.pathname.startsWith('/chat') ||
+            request.nextUrl.pathname.startsWith('/dashboard')
+        ) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/login'
+            url.searchParams.set('redirect', request.nextUrl.pathname)
+            return NextResponse.redirect(url)
+        }
     }
 
     return supabaseResponse

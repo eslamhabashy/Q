@@ -35,7 +35,11 @@ export default function LoginPage() {
                 throw error;
             }
 
-            router.push("/dashboard");
+            // Check for redirect parameter
+            const searchParams = new URLSearchParams(window.location.search);
+            const redirect = searchParams.get('redirect') || '/dashboard';
+
+            router.push(redirect);
             router.refresh();
             toast.success(language === "ar" ? "تم تسجيل الدخول بنجاح" : "Logged in successfully");
         } catch (error: any) {
