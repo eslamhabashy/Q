@@ -205,12 +205,11 @@ export default function LawyersPage() {
           </div>
 
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Scale className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">
-              {language === "ar" ? "قانونك" : "Qanunak"}
-            </span>
+            <img
+              src={language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png"}
+              alt={language === "ar" ? "قانونك" : "Qanunak"}
+              className="h-8 w-auto"
+            />
           </Link>
 
           <div className="flex items-center gap-2">
