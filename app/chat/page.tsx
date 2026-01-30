@@ -432,9 +432,9 @@ export default function ChatPage() {
       />
 
       {/* Main Chat Area */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col min-h-0">
         {/* Chat Header */}
-        <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4">
+        <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 shrink-0">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -475,18 +475,22 @@ export default function ChatPage() {
         {/* Disclaimer Banner */}
         <DisclaimerBanner language={language} />
 
-        {/* Chat Messages */}
-        <ChatWindow
-          messages={messages}
-          isTyping={isTyping}
-          language={language}
-          suggestedQuestions={suggestedQuestions[language]}
-          onSuggestedQuestion={handleSuggestedQuestion}
-        />
-        <div ref={messagesEndRef} />
+        {/* Chat Messages - Scrollable container */}
+        <div className="flex-1 overflow-hidden">
+          <ChatWindow
+            messages={messages}
+            isTyping={isTyping}
+            language={language}
+            suggestedQuestions={suggestedQuestions[language]}
+            onSuggestedQuestion={handleSuggestedQuestion}
+          />
+          <div ref={messagesEndRef} />
+        </div>
 
         {/* Chat Input */}
-        <ChatInput language={language} onSend={handleSendMessage} />
+        <div className="shrink-0">
+          <ChatInput language={language} onSend={handleSendMessage} />
+        </div>
 
         {/* Subscription Prompt Modal */}
         {showSubscriptionPrompt && (

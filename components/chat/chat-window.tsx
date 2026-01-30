@@ -89,7 +89,7 @@ export function ChatWindow({
   }
 
   return (
-    <ScrollArea className="flex-1">
+    <ScrollArea className="h-full">
       <div className="mx-auto max-w-3xl space-y-6 p-6">
         {messages.map((message) => (
           <div
