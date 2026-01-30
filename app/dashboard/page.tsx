@@ -204,7 +204,7 @@ export default function DashboardPage() {
   const content = {
     en: {
       title: "Dashboard",
-      welcome: "Welcome back, Ahmed",
+      welcome: `Welcome back, ${userName}`,
       subtitle: "Here's an overview of your legal assistance activity",
       questionsAsked: "Questions Asked",
       savedConversations: "Saved Conversations",
@@ -228,7 +228,7 @@ export default function DashboardPage() {
     },
     ar: {
       title: "لوحة التحكم",
-      welcome: "مرحباً بعودتك، أحمد",
+      welcome: `مرحباً بعودتك، ${userName}`,
       subtitle: "إليك نظرة عامة على نشاط المساعدة القانونية الخاص بك",
       questionsAsked: "الأسئلة المطروحة",
       savedConversations: "المحادثات المحفوظة",
