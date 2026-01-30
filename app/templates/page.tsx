@@ -28,151 +28,32 @@ import {
   Globe,
   Moon,
   Sun,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useTheme } from "next-themes";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface Template {
   id: string;
-  titleEn: string;
-  titleAr: string;
-  descriptionEn: string;
-  descriptionAr: string;
+  title: string;
+  description: string;
   category: string;
-  downloads: number;
-  premium: boolean;
+  download_count: number;
+  file_url: string;
+  file_name: string;
+  is_active: boolean;
 }
-
-const templates: Template[] = [
-  {
-    id: "1",
-    titleEn: "Residential Rental Agreement",
-    titleAr: "عقد إيجار سكني",
-    descriptionEn:
-      "Standard residential lease agreement compliant with Egyptian rent law. Includes terms for rent, duration, maintenance, and termination.",
-    descriptionAr:
-      "عقد إيجار سكني قياسي متوافق مع قانون الإيجار المصري. يتضمن شروط الإيجار والمدة والصيانة والإنهاء.",
-    category: "rental",
-    downloads: 2450,
-    premium: false,
-  },
-  {
-    id: "2",
-    titleEn: "Commercial Lease Agreement",
-    titleAr: "عقد إيجار تجاري",
-    descriptionEn:
-      "Comprehensive commercial property lease for shops, offices, and business premises under Egyptian commercial law.",
-    descriptionAr:
-      "عقد إيجار شامل للعقارات التجارية للمحلات والمكاتب ومقرات الأعمال وفقاً للقانون التجاري المصري.",
-    category: "rental",
-    downloads: 1820,
-    premium: false,
-  },
-  {
-    id: "3",
-    titleEn: "Employment Contract",
-    titleAr: "عقد عمل",
-    descriptionEn:
-      "Standard employment agreement covering salary, working hours, benefits, and termination terms under Egyptian labor law.",
-    descriptionAr:
-      "عقد توظيف قياسي يغطي الراتب وساعات العمل والمزايا وشروط الإنهاء بموجب قانون العمل المصري.",
-    category: "employment",
-    downloads: 3200,
-    premium: false,
-  },
-  {
-    id: "4",
-    titleEn: "Non-Disclosure Agreement (NDA)",
-    titleAr: "اتفاقية عدم الإفصاح",
-    descriptionEn:
-      "Protect confidential business information with this legally binding NDA template for Egyptian businesses.",
-    descriptionAr:
-      "احمِ معلومات العمل السرية بنموذج اتفاقية عدم الإفصاح الملزم قانونياً للشركات المصرية.",
-    category: "employment",
-    downloads: 890,
-    premium: true,
-  },
-  {
-    id: "5",
-    titleEn: "Business Partnership Agreement",
-    titleAr: "عقد شراكة تجارية",
-    descriptionEn:
-      "Establish clear terms for business partnerships including profit sharing, responsibilities, and dispute resolution.",
-    descriptionAr:
-      "حدد شروطاً واضحة للشراكات التجارية بما في ذلك توزيع الأرباح والمسؤوليات وحل النزاعات.",
-    category: "business",
-    downloads: 1560,
-    premium: false,
-  },
-  {
-    id: "6",
-    titleEn: "Company Formation Documents",
-    titleAr: "مستندات تأسيس شركة",
-    descriptionEn:
-      "Complete set of documents needed to register a limited liability company (LLC) in Egypt.",
-    descriptionAr:
-      "مجموعة كاملة من المستندات اللازمة لتسجيل شركة ذات مسؤولية محدودة في مصر.",
-    category: "business",
-    downloads: 2100,
-    premium: true,
-  },
-  {
-    id: "7",
-    titleEn: "Power of Attorney",
-    titleAr: "توكيل رسمي",
-    descriptionEn:
-      "Legal authorization document allowing someone to act on your behalf in specified legal and financial matters.",
-    descriptionAr:
-      "مستند تفويض قانوني يسمح لشخص بالتصرف نيابة عنك في مسائل قانونية ومالية محددة.",
-    category: "family",
-    downloads: 1890,
-    premium: false,
-  },
-  {
-    id: "8",
-    titleEn: "Marriage Contract Addendum",
-    titleAr: "ملحق عقد الزواج",
-    descriptionEn:
-      "Additional terms and conditions that can be added to the standard Egyptian marriage contract.",
-    descriptionAr:
-      "شروط وأحكام إضافية يمكن إضافتها إلى عقد الزواج المصري القياسي.",
-    category: "family",
-    downloads: 750,
-    premium: true,
-  },
-  {
-    id: "9",
-    titleEn: "Service Agreement",
-    titleAr: "عقد خدمات",
-    descriptionEn:
-      "General service agreement template for freelancers and service providers in Egypt.",
-    descriptionAr:
-      "نموذج عقد خدمات عام للعاملين المستقلين ومقدمي الخدمات في مصر.",
-    category: "business",
-    downloads: 1340,
-    premium: false,
-  },
-  {
-    id: "10",
-    titleEn: "Termination Letter",
-    titleAr: "خطاب إنهاء الخدمة",
-    descriptionEn:
-      "Professional employment termination letter template compliant with Egyptian labor law notice requirements.",
-    descriptionAr:
-      "نموذج خطاب إنهاء الخدمة المهني متوافق مع متطلبات الإخطار في قانون العمل المصري.",
-    category: "employment",
-    downloads: 980,
-    premium: false,
-  },
-];
 
 const categories = [
   { id: "all", icon: FileText, labelEn: "All Templates", labelAr: "جميع النماذج" },
-  { id: "rental", icon: Home, labelEn: "Rental", labelAr: "الإيجار" },
-  { id: "employment", icon: Briefcase, labelEn: "Employment", labelAr: "التوظيف" },
-  { id: "business", icon: Building2, labelEn: "Business", labelAr: "الأعمال" },
-  { id: "family", icon: Users, labelEn: "Family Law", labelAr: "قانون الأسرة" },
+  { id: "Rental", icon: Home, labelEn: "Rental", labelAr: "الإيجار" },
+  { id: "Employment", icon: Briefcase, labelEn: "Employment", labelAr: "التوظيف" },
+  { id: "Business", icon: Building2, labelEn: "Business", labelAr: "الأعمال" },
+  { id: "Family", icon: Users, labelEn: "Family Law", labelAr: "قانون الأسرة" },
+  { id: "Other", icon: FileText, labelEn: "Other", labelAr: "أخرى" },
 ];
 
 export default function TemplatesPage() {
@@ -181,8 +62,52 @@ export default function TemplatesPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
   const isRTL = language === "ar";
   const isDark = theme === "dark";
+  const supabase = createClient();
+
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  const fetchTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("document_templates")
+        .select("*")
+        .eq("is_active", true)
+        .order("download_count", { ascending: false });
+
+      if (error) throw error;
+      setTemplates(data || []);
+    } catch (error: any) {
+      console.error("Error fetching templates:", error);
+      toast.error("Failed to load templates");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = async (template: Template) => {
+    // Increment download count
+    try {
+      await supabase
+        .from("document_templates")
+        .update({ download_count: template.download_count + 1 })
+        .eq("id", template.id);
+
+      // Download file
+      window.open(template.file_url, "_blank");
+      toast.success(language === "ar" ? "جاري التحميل..." : "Downloading...");
+
+      // Refresh templates to update count
+      fetchTemplates();
+    } catch (error) {
+      toast.error(language === "ar" ? "فشل التحميل" : "Download failed");
+    }
+  };
 
   const handleThemeToggle = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -204,6 +129,8 @@ export default function TemplatesPage() {
       previewDescription: "This is a preview of the template. Customize it to fit your needs.",
       download: "Download Template",
       disclaimer: "This template is for informational purposes. Have it reviewed by a lawyer before signing.",
+      loading: "Loading templates...",
+      noTemplates: "No templates found",
     },
     ar: {
       title: "نماذج المستندات",
@@ -220,6 +147,8 @@ export default function TemplatesPage() {
       previewDescription: "هذه معاينة للنموذج. خصصه ليناسب احتياجاتك.",
       download: "تحميل النموذج",
       disclaimer: "هذا النموذج لأغراض إعلامية. راجعه مع محامٍ قبل التوقيع.",
+      loading: "جاري تحميل النماذج...",
+      noTemplates: "لم يتم العثور على نماذج",
     },
   };
 
@@ -229,12 +158,18 @@ export default function TemplatesPage() {
     const matchesCategory =
       selectedCategory === "all" || template.category === selectedCategory;
     const matchesSearch =
-      template.titleEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.titleAr.includes(searchQuery) ||
-      template.descriptionEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.descriptionAr.includes(searchQuery);
+      template.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (template.description && template.description.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? "rtl" : "ltr"}>
@@ -330,29 +265,22 @@ export default function TemplatesPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <FileText className="h-5 w-5" />
                   </div>
-                  <Badge
-                    variant={template.premium ? "default" : "secondary"}
-                    className={cn(
-                      template.premium
-                        ? "bg-accent text-accent-foreground"
-                        : "bg-muted text-muted-foreground"
-                    )}
-                  >
-                    {template.premium ? t.premium : t.free}
+                  <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                    {t.free}
                   </Badge>
                 </div>
                 <CardTitle className="mt-3 text-lg text-card-foreground">
-                  {language === "ar" ? template.titleAr : template.titleEn}
+                  {template.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">
-                  {language === "ar" ? template.descriptionAr : template.descriptionEn}
+                  {template.description}
                 </p>
                 <div className="mb-4 flex items-center gap-1 text-xs text-muted-foreground">
                   <Download className="h-3 w-3" />
                   <span>
-                    {template.downloads.toLocaleString()} {t.downloads}
+                    {template.download_count.toLocaleString()} {t.downloads}
                   </span>
                 </div>
                 <div className="flex gap-2">
@@ -371,27 +299,26 @@ export default function TemplatesPage() {
                     <DialogContent className="max-w-2xl">
                       <DialogHeader>
                         <DialogTitle>
-                          {language === "ar" ? template.titleAr : template.titleEn}
+                          {template.title}
                         </DialogTitle>
                         <DialogDescription>{t.previewDescription}</DialogDescription>
                       </DialogHeader>
                       <div className="mt-4 rounded-lg border border-border bg-muted/50 p-6">
                         <div className="space-y-4 text-sm text-muted-foreground">
                           <p className="font-medium text-foreground">
-                            {language === "ar" ? template.titleAr : template.titleEn}
+                            {template.title}
                           </p>
-                          <p>
-                            {language === "ar"
-                              ? template.descriptionAr
-                              : template.descriptionEn}
-                          </p>
+                          <p>{template.description}</p>
                           <div className="rounded-md bg-card p-4">
                             <p className="text-xs italic">{t.disclaimer}</p>
                           </div>
                         </div>
                       </div>
                       <div className="mt-4 flex justify-end">
-                        <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+                        <Button
+                          className="bg-accent text-accent-foreground hover:bg-accent/90"
+                          onClick={() => handleDownload(template)}
+                        >
                           <Download className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
                           {t.download}
                         </Button>
@@ -401,6 +328,7 @@ export default function TemplatesPage() {
                   <Button
                     size="sm"
                     className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
+                    onClick={() => handleDownload(template)}
                   >
                     {t.useTemplate}
                   </Button>
@@ -414,11 +342,7 @@ export default function TemplatesPage() {
         {filteredTemplates.length === 0 && (
           <div className="py-16 text-center">
             <FileText className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-muted-foreground">
-              {language === "ar"
-                ? "لم يتم العثور على نماذج"
-                : "No templates found"}
-            </p>
+            <p className="mt-4 text-muted-foreground">{t.noTemplates}</p>
           </div>
         )}
       </main>
