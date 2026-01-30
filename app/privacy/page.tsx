@@ -129,7 +129,7 @@ export default function PrivacyPolicyPage() {
                         <img
                             src={language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png"}
                             alt={language === "ar" ? "قانونك" : "Qanunak"}
-                            className="h-16 w-auto"
+                            className="h-20 w-auto"
                         />
                     </Link>
 
