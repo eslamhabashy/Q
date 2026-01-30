@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -30,156 +30,33 @@ import {
   Star,
   MapPin,
   Briefcase,
-  Clock,
   BadgeCheck,
   ArrowLeft,
   Globe,
   Moon,
   Sun,
   Crown,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useTheme } from "next-themes";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface Lawyer {
   id: string;
-  nameEn: string;
-  nameAr: string;
-  specialtyEn: string;
-  specialtyAr: string;
-  locationEn: string;
-  locationAr: string;
-  experience: number;
-  rating: number;
-  reviews: number;
-  hourlyRate: number;
-  verified: boolean;
-  available: boolean;
+  name: string;
+  specialty: string;
+  location: string;
+  phone: string;
+  email: string;
+  experience_years: number;
+  bio: string;
+  avatar_url: string | null;
+  is_verified: boolean;
+  is_active: boolean;
 }
-
-const lawyers: Lawyer[] = [
-  {
-    id: "1",
-    nameEn: "Dr. Hassan El-Masry",
-    nameAr: "د. حسن المصري",
-    specialtyEn: "Civil & Commercial Law",
-    specialtyAr: "القانون المدني والتجاري",
-    locationEn: "Cairo, Maadi",
-    locationAr: "القاهرة، المعادي",
-    experience: 25,
-    rating: 4.9,
-    reviews: 156,
-    hourlyRate: 500,
-    verified: true,
-    available: true,
-  },
-  {
-    id: "2",
-    nameEn: "Fatima Abdel-Rahman",
-    nameAr: "فاطمة عبد الرحمن",
-    specialtyEn: "Family Law",
-    specialtyAr: "قانون الأسرة",
-    locationEn: "Cairo, Nasr City",
-    locationAr: "القاهرة، مدينة نصر",
-    experience: 15,
-    rating: 4.8,
-    reviews: 98,
-    hourlyRate: 400,
-    verified: true,
-    available: true,
-  },
-  {
-    id: "3",
-    nameEn: "Mohamed Salah Eddine",
-    nameAr: "محمد صلاح الدين",
-    specialtyEn: "Labor & Employment Law",
-    specialtyAr: "قانون العمل والتوظيف",
-    locationEn: "Alexandria",
-    locationAr: "الإسكندرية",
-    experience: 18,
-    rating: 4.7,
-    reviews: 124,
-    hourlyRate: 350,
-    verified: true,
-    available: false,
-  },
-  {
-    id: "4",
-    nameEn: "Nour Hassan",
-    nameAr: "نور حسن",
-    specialtyEn: "Real Estate Law",
-    specialtyAr: "قانون العقارات",
-    locationEn: "Giza, 6th October",
-    locationAr: "الجيزة، السادس من أكتوبر",
-    experience: 12,
-    rating: 4.6,
-    reviews: 87,
-    hourlyRate: 300,
-    verified: true,
-    available: true,
-  },
-  {
-    id: "5",
-    nameEn: "Ahmed Kamal",
-    nameAr: "أحمد كمال",
-    specialtyEn: "Criminal Law",
-    specialtyAr: "القانون الجنائي",
-    locationEn: "Cairo, Downtown",
-    locationAr: "القاهرة، وسط البلد",
-    experience: 20,
-    rating: 4.9,
-    reviews: 203,
-    hourlyRate: 600,
-    verified: true,
-    available: true,
-  },
-  {
-    id: "6",
-    nameEn: "Laila Ibrahim",
-    nameAr: "ليلى إبراهيم",
-    specialtyEn: "Corporate & Business Law",
-    specialtyAr: "قانون الشركات والأعمال",
-    locationEn: "Cairo, New Cairo",
-    locationAr: "القاهرة، القاهرة الجديدة",
-    experience: 14,
-    rating: 4.8,
-    reviews: 112,
-    hourlyRate: 450,
-    verified: true,
-    available: true,
-  },
-  {
-    id: "7",
-    nameEn: "Omar Sherif",
-    nameAr: "عمر شريف",
-    specialtyEn: "Intellectual Property",
-    specialtyAr: "الملكية الفكرية",
-    locationEn: "Cairo, Heliopolis",
-    locationAr: "القاهرة، مصر الجديدة",
-    experience: 10,
-    rating: 4.5,
-    reviews: 64,
-    hourlyRate: 400,
-    verified: true,
-    available: false,
-  },
-  {
-    id: "8",
-    nameEn: "Heba Mostafa",
-    nameAr: "هبة مصطفى",
-    specialtyEn: "Family Law",
-    specialtyAr: "قانون الأسرة",
-    locationEn: "Mansoura",
-    locationAr: "المنصورة",
-    experience: 8,
-    rating: 4.7,
-    reviews: 56,
-    hourlyRate: 250,
-    verified: true,
-    available: true,
-  },
-];
 
 const specialties = [
   { id: "all", labelEn: "All Specialties", labelAr: "جميع التخصصات" },
@@ -206,8 +83,34 @@ export default function LawyersPage() {
   const [selectedSpecialty, setSelectedSpecialty] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedLawyer, setSelectedLawyer] = useState<Lawyer | null>(null);
+  const [lawyers, setLawyers] = useState<Lawyer[]>([]);
+  const [loading, setLoading] = useState(true);
   const isRTL = language === "ar";
   const isDark = theme === "dark";
+  const supabase = createClient();
+
+  useEffect(() => {
+    fetchLawyers();
+  }, []);
+
+  const fetchLawyers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("lawyers")
+        .select("*")
+        .eq("is_active", true)
+        .order("is_verified", { ascending: false })
+        .order("experience_years", { ascending: false });
+
+      if (error) throw error;
+      setLawyers(data || []);
+    } catch (error: any) {
+      console.error("Error fetching lawyers:", error);
+      toast.error("Failed to load lawyers");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleThemeToggle = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -222,17 +125,11 @@ export default function LawyersPage() {
       specialty: "Specialty",
       location: "Location",
       yearsExp: "years experience",
-      reviews: "reviews",
-      perHour: "/hour",
       verified: "Verified by Qanunak",
       available: "Available",
-      unavailable: "Unavailable",
       requestConsultation: "Request Consultation",
       back: "Back to Home",
       premiumFeature: "Premium Feature",
-      premiumDescription:
-        "Lawyer consultations are available for Premium subscribers. Upgrade to access verified lawyers.",
-      upgrade: "Upgrade to Premium",
       requestTitle: "Request Consultation",
       requestDescription: "Fill in the details below to request a consultation with",
       yourName: "Your Name",
@@ -241,7 +138,8 @@ export default function LawyersPage() {
       caseDescription: "Brief Description of Your Case",
       preferredTime: "Preferred Time",
       submit: "Submit Request",
-      currency: "EGP",
+      loading: "Loading lawyers...",
+      noLawyers: "No lawyers found",
     },
     ar: {
       title: "ابحث عن محامي",
@@ -251,17 +149,11 @@ export default function LawyersPage() {
       specialty: "التخصص",
       location: "الموقع",
       yearsExp: "سنوات خبرة",
-      reviews: "تقييمات",
-      perHour: "/ساعة",
       verified: "موثق من قانونك",
       available: "متاح",
-      unavailable: "غير متاح",
       requestConsultation: "طلب استشارة",
       back: "العودة للرئيسية",
       premiumFeature: "ميزة مميزة",
-      premiumDescription:
-        "استشارات المحامين متاحة للمشتركين المميزين. قم بالترقية للوصول إلى المحامين الموثقين.",
-      upgrade: "الترقية للمميز",
       requestTitle: "طلب استشارة",
       requestDescription: "املأ التفاصيل أدناه لطلب استشارة مع",
       yourName: "اسمك",
@@ -270,24 +162,31 @@ export default function LawyersPage() {
       caseDescription: "وصف موجز لقضيتك",
       preferredTime: "الوقت المفضل",
       submit: "إرسال الطلب",
-      currency: "ج.م",
+      loading: "جاري تحميل المحامين...",
+      noLawyers: "لم يتم العثور على محامين",
     },
   };
 
   const t = content[language];
 
   const filteredLawyers = lawyers.filter((lawyer) => {
-    const matchesSearch =
-      lawyer.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lawyer.nameAr.includes(searchQuery);
+    const matchesSearch = lawyer.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSpecialty =
       selectedSpecialty === "all" ||
-      lawyer.specialtyEn.toLowerCase().includes(selectedSpecialty);
+      lawyer.specialty.toLowerCase().includes(selectedSpecialty);
     const matchesLocation =
       selectedLocation === "all" ||
-      lawyer.locationEn.toLowerCase().includes(selectedLocation);
+      lawyer.location.toLowerCase().includes(selectedLocation);
     return matchesSearch && matchesSpecialty && matchesLocation;
   });
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? "rtl" : "ltr"}>
@@ -402,8 +301,11 @@ export default function LawyersPage() {
                 <div className="flex gap-4">
                   {/* Avatar */}
                   <Avatar className="h-16 w-16 shrink-0">
+                    {lawyer.avatar_url && (
+                      <AvatarImage src={lawyer.avatar_url} alt={lawyer.name} />
+                    )}
                     <AvatarFallback className="bg-primary/10 text-lg font-semibold text-primary">
-                      {(language === "ar" ? lawyer.nameAr : lawyer.nameEn)
+                      {lawyer.name
                         .split(" ")
                         .map((n) => n[0])
                         .slice(0, 2)
@@ -417,25 +319,21 @@ export default function LawyersPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-card-foreground">
-                            {language === "ar" ? lawyer.nameAr : lawyer.nameEn}
+                            {lawyer.name}
                           </h3>
-                          {lawyer.verified && (
+                          {lawyer.is_verified && (
                             <BadgeCheck className="h-4 w-4 text-accent" />
                           )}
                         </div>
                         <p className="text-sm text-accent">
-                          {language === "ar" ? lawyer.specialtyAr : lawyer.specialtyEn}
+                          {lawyer.specialty}
                         </p>
                       </div>
                       <Badge
-                        variant={lawyer.available ? "default" : "secondary"}
-                        className={cn(
-                          lawyer.available
-                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-muted text-muted-foreground"
-                        )}
+                        variant="default"
+                        className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                       >
-                        {lawyer.available ? t.available : t.unavailable}
+                        {t.available}
                       </Badge>
                     </div>
 
@@ -443,43 +341,27 @@ export default function LawyersPage() {
                     <div className="mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
-                        {language === "ar" ? lawyer.locationAr : lawyer.locationEn}
+                        {lawyer.location}
                       </span>
                       <span className="flex items-center gap-1">
                         <Briefcase className="h-4 w-4" />
-                        {lawyer.experience} {t.yearsExp}
+                        {lawyer.experience_years} {t.yearsExp}
                       </span>
                     </div>
 
-                    {/* Rating & Reviews */}
-                    <div className="mt-2 flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-accent text-accent" />
-                        <span className="font-medium text-card-foreground">
-                          {lawyer.rating}
-                        </span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        ({lawyer.reviews} {t.reviews})
-                      </span>
-                    </div>
+                    {/* Bio */}
+                    {lawyer.bio && (
+                      <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
+                        {lawyer.bio}
+                      </p>
+                    )}
 
-                    {/* Price & Action */}
+                    {/* Action */}
                     <div className="mt-4 flex items-center justify-between">
-                      <div>
-                        <span className="text-lg font-bold text-card-foreground">
-                          {lawyer.hourlyRate} {t.currency}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {t.perHour}
-                        </span>
-                      </div>
-
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button
                             className="bg-accent text-accent-foreground hover:bg-accent/90"
-                            disabled={!lawyer.available}
                             onClick={() => setSelectedLawyer(lawyer)}
                           >
                             {t.requestConsultation}
@@ -489,8 +371,7 @@ export default function LawyersPage() {
                           <DialogHeader>
                             <DialogTitle>{t.requestTitle}</DialogTitle>
                             <DialogDescription>
-                              {t.requestDescription}{" "}
-                              {language === "ar" ? lawyer.nameAr : lawyer.nameEn}
+                              {t.requestDescription} {lawyer.name}
                             </DialogDescription>
                           </DialogHeader>
                           <form className="mt-4 space-y-4">
@@ -545,7 +426,7 @@ export default function LawyersPage() {
                     </div>
 
                     {/* Verified Badge */}
-                    {lawyer.verified && (
+                    {lawyer.is_verified && (
                       <div className="mt-3 flex items-center gap-1 text-xs text-accent">
                         <BadgeCheck className="h-3 w-3" />
                         {t.verified}
@@ -562,9 +443,7 @@ export default function LawyersPage() {
         {filteredLawyers.length === 0 && (
           <div className="py-16 text-center">
             <Scale className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-muted-foreground">
-              {language === "ar" ? "لم يتم العثور على محامين" : "No lawyers found"}
-            </p>
+            <p className="mt-4 text-muted-foreground">{t.noLawyers}</p>
           </div>
         )}
       </main>
