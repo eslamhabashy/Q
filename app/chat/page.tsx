@@ -541,7 +541,7 @@ export default function ChatPage() {
         language={language}
         conversations={conversations}
         activeConversationId={activeConversationId}
-        remainingQuestions={remainingQuestions}
+        remainingQuestions={isDemoMode ? (3 - demoQuestionsUsed) : remainingQuestions}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onNewChat={handleNewChat}
