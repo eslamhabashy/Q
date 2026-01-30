@@ -25,10 +25,15 @@ import {
   LayoutDashboard,
   Settings,
   LogOut,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useTheme } from "next-themes";
+import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/providers/auth-provider";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface Conversation {
   id: string;
@@ -38,42 +43,159 @@ interface Conversation {
   messageCount: number;
 }
 
+interface UserStats {
+  totalMessages: number;
+  totalConversations: number;
+  messagesThisMonth: number;
+}
+
 export default function DashboardPage() {
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [stats, setStats] = useState<UserStats>({
+    totalMessages: 0,
+    totalConversations: 0,
+    messagesThisMonth: 0,
+  });
+  const [dailyUsage, setDailyUsage] = useState({ used: 0, limit: 3 });
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const isRTL = language === "ar";
+  const supabase = createClient();
 
-  const [conversations] = useState<Conversation[]>([
-    {
-      id: "1",
-      title: "Rental Agreement Dispute",
-      preview: "What are my rights as a tenant if my landlord wants to...",
-      timestamp: new Date(Date.now() - 3600000),
-      messageCount: 8,
-    },
-    {
-      id: "2",
-      title: "Employment Contract Review",
-      preview: "Is it legal for my employer to change my working hours...",
-      timestamp: new Date(Date.now() - 86400000),
-      messageCount: 12,
-    },
-    {
-      id: "3",
-      title: "Traffic Violation Appeal",
-      preview: "I received a traffic ticket but I believe it was...",
-      timestamp: new Date(Date.now() - 172800000),
-      messageCount: 5,
-    },
-    {
-      id: "4",
-      title: "Starting a Small Business",
-      preview: "What are the legal requirements to register a...",
-      timestamp: new Date(Date.now() - 259200000),
-      messageCount: 15,
-    },
-  ]);
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+      fetchConversations();
+      fetchStats();
+      fetchDailyUsage();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+
+    setUserName(data?.full_name || "User");
+    setUserEmail(user.email || "");
+  };
+
+  const fetchConversations = async () => {
+    if (!user) return;
+
+    try {
+      const { data: conversationsData } = await supabase
+        .from("conversations")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(4);
+
+      if (conversationsData) {
+        const conversationsWithMessages = await Promise.all(
+          conversationsData.map(async (conv) => {
+            const { data: messagesData, count } = await supabase
+              .from("messages")
+              .select("*", { count: "exact" })
+              .eq("conversation_id", conv.id)
+              .order("created_at", { ascending: true });
+
+            const firstUserMessage = messagesData?.find(m => m.role === 'user');
+            const preview = firstUserMessage
+              ? firstUserMessage.content.substring(0, 60) + (firstUserMessage.content.length > 60 ? '...' : '')
+              : (language === "ar" ? "محادثة جديدة" : "New conversation");
+
+            return {
+              id: conv.id,
+              title: conv.title || preview,
+              preview,
+              timestamp: new Date(conv.updated_at),
+              messageCount: count || 0,
+            };
+          })
+        );
+
+        setConversations(conversationsWithMessages);
+      }
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+    }
+  };
+
+  const fetchStats = async () => {
+    if (!user) return;
+
+    try {
+      // Total messages
+      const { count: totalMessages } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("role", "user");
+
+      // Total conversations
+      const { count: totalConversations } = await supabase
+        .from("conversations")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      // Messages this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { count: messagesThisMonth } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("role", "user")
+        .gte("created_at", startOfMonth.toISOString());
+
+      setStats({
+        totalMessages: totalMessages || 0,
+        totalConversations: totalConversations || 0,
+        messagesThisMonth: messagesThisMonth || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
+
+  const fetchDailyUsage = async () => {
+    if (!user) return;
+
+    try {
+      const { data } = await supabase
+        .rpc("get_user_daily_usage", { p_user_id: user.id });
+
+      if (data && data.length > 0) {
+        setDailyUsage({
+          used: data[0].message_count || 0,
+          limit: data[0].daily_limit || 3,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching daily usage:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+    toast.success(language === "ar" ? "تم تسجيل الخروج بنجاح" : "Logged out successfully");
+  };
 
   const handleThemeToggle = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -148,24 +270,24 @@ export default function DashboardPage() {
     });
   };
 
-  const stats = [
+  const statsCards = [
     {
       label: t.questionsAsked,
-      value: "12",
+      value: stats.totalMessages.toString(),
       icon: MessageSquare,
-      change: "+3",
+      change: `+${stats.messagesThisMonth}`,
     },
     {
       label: t.savedConversations,
-      value: "8",
+      value: stats.totalConversations.toString(),
       icon: FileText,
-      change: "+2",
+      change: t.thisMonth,
     },
     {
       label: t.documentsDownloaded,
-      value: "5",
+      value: "0",
       icon: Download,
-      change: "+1",
+      change: t.thisMonth,
     },
   ];
 
@@ -189,6 +311,14 @@ export default function DashboardPage() {
       variant: "default" as const,
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -278,21 +408,22 @@ export default function DashboardPage() {
           <div className="mb-4 flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground">
-                {language === "ar" ? "أ" : "A"}
+                {userName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <p className="text-sm font-medium text-sidebar-foreground">
-                {language === "ar" ? "أحمد حسن" : "Ahmed Hassan"}
+                {userName}
               </p>
               <p className="text-xs text-sidebar-foreground/60">
-                ahmed@email.com
+                {userEmail}
               </p>
             </div>
           </div>
           <Button
             variant="ghost"
             className="w-full justify-start text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            onClick={handleSignOut}
           >
             <LogOut className={cn("h-4 w-4", isRTL ? "ml-3" : "mr-3")} />
             {t.logout}
@@ -351,7 +482,7 @@ export default function DashboardPage() {
 
             {/* Stats Grid */}
             <div className="mb-8 grid gap-4 sm:grid-cols-3">
-              {stats.map((stat, index) => (
+              {statsCards.map((stat, index) => (
                 <Card key={index} className="border-border">
                   <CardContent className="flex items-center gap-4 p-6">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -489,7 +620,7 @@ export default function DashboardPage() {
                       {t.freePlan}
                     </Badge>
                     <p className="mb-1 text-2xl font-bold text-card-foreground">
-                      1 / 3
+                      {dailyUsage.used} / {dailyUsage.limit}
                     </p>
                     <p className="mb-4 text-sm text-muted-foreground">
                       {t.questionsRemaining}
