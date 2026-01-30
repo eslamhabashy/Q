@@ -17,6 +17,7 @@ export default function SignUpPage() {
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
@@ -26,6 +27,13 @@ export default function SignUpPage() {
 
     const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate terms acceptance
+        if (!acceptedTerms) {
+            toast.error(language === "ar" ? "يجب الموافقة على شروط الخدمة" : "You must accept the Terms of Service");
+            return;
+        }
+
         setIsLoading(true);
 
         try {
@@ -64,6 +72,10 @@ export default function SignUpPage() {
         phone: language === "ar" ? "رقم الهاتف" : "Phone Number",
         phonePlaceholder: language === "ar" ? "أدخل رقم هاتفك" : "Enter your phone number",
         password: language === "ar" ? "كلمة المرور" : "Password",
+        acceptTerms: language === "ar" ? "أوافق على" : "I agree to the",
+        termsOfService: language === "ar" ? "شروط الخدمة" : "Terms of Service",
+        privacyPolicy: language === "ar" ? "سياسة الخصوصية" : "Privacy Policy",
+        and: language === "ar" ? "و" : "and",
         signUp: language === "ar" ? "إنشاء حساب" : "Sign Up",
         hasAccount: language === "ar" ? "لديك حساب بالفعل؟" : "Already have an account?",
         login: language === "ar" ? "تسجيل الدخول" : "Log In",
@@ -147,9 +159,30 @@ export default function SignUpPage() {
                                 </Button>
                             </div>
                         </div>
+
+                        {/* Terms of Service Acceptance */}
+                        <div className="flex items-start space-x-2 space-x-reverse">
+                            <input
+                                type="checkbox"
+                                id="terms"
+                                checked={acceptedTerms}
+                                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                                className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <label htmlFor="terms" className="text-sm text-muted-foreground">
+                                {t.acceptTerms}{" "}
+                                <Link href="/terms" target="_blank" className="text-primary hover:underline">
+                                    {t.termsOfService}
+                                </Link>
+                                {" "}{t.and}{" "}
+                                <Link href="/privacy" target="_blank" className="text-primary hover:underline">
+                                    {t.privacyPolicy}
+                                </Link>
+                            </label>
+                        </div>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-4">
-                        <Button className="w-full" type="submit" disabled={isLoading}>
+                        <Button className="w-full" type="submit" disabled={isLoading || !acceptedTerms}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {t.signUp}
                         </Button>
