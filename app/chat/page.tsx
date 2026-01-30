@@ -64,17 +64,47 @@ export default function ChatPage() {
   const [remainingQuestions, setRemainingQuestions] = useState(3);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showSubscriptionPrompt, setShowSubscriptionPrompt] = useState(false);
+
+  // Demo mode state
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [demoQuestionsUsed, setDemoQuestionsUsed] = useState(0);
+  const [showDemoSignupPrompt, setShowDemoSignupPrompt] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isRTL = language === "ar";
   const isDark = theme === "dark";
 
-  // Redirect if not authenticated (backup to middleware)
+  // Check if demo mode on mount
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/login?redirect=/chat');
+      // Enable demo mode for unauthenticated users
+      setIsDemoMode(true);
+
+      // Load demo state from localStorage
+      const demoCount = localStorage.getItem('demo_questions_count');
+      if (demoCount) {
+        const count = parseInt(demoCount, 10);
+        setDemoQuestionsUsed(count);
+
+        // Load demo messages
+        const demoMessages = localStorage.getItem('demo_messages');
+        if (demoMessages) {
+          try {
+            const parsed = JSON.parse(demoMessages);
+            setMessages(parsed.map((msg: any) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp)
+            })));
+          } catch (e) {
+            console.error('Error loading demo messages:', e);
+          }
+        }
+      }
+    } else if (user) {
+      setIsDemoMode(false);
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading]);
 
   // Load user conversations from Supabase
   useEffect(() => {
@@ -259,6 +289,89 @@ export default function ChatPage() {
     }
   };
 
+  const handleDemoMessage = async (content: string) => {
+    // Check demo limit
+    if (demoQuestionsUsed >= 3) {
+      setShowDemoSignupPrompt(true);
+      return;
+    }
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content,
+      timestamp: new Date(),
+    };
+
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+
+    // Update demo count
+    const newCount = demoQuestionsUsed + 1;
+    setDemoQuestionsUsed(newCount);
+    localStorage.setItem('demo_questions_count', newCount.toString());
+
+    // Save messages to localStorage
+    localStorage.setItem('demo_messages', JSON.stringify(updatedMessages));
+
+    // Show typing indicator
+    setIsTyping(true);
+
+    try {
+      // Build history for AI
+      const history = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      // Call API without authentication
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: content,
+          language,
+          history,
+          isDemoMode: true
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to get response');
+
+      const data = await response.json();
+
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.response,
+        timestamp: new Date(),
+      };
+
+      const finalMessages = [...updatedMessages, aiMessage];
+      setMessages(finalMessages);
+      localStorage.setItem('demo_messages', JSON.stringify(finalMessages));
+
+      // Show signup prompt if this was the 3rd question
+      if (newCount >= 3) {
+        setTimeout(() => setShowDemoSignupPrompt(true), 1000);
+      }
+    } catch (error) {
+      console.error('Demo chat error:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: language === "ar"
+          ? "عذراً، حدث خطأ. يرجى المحاولة مرة أخرى."
+          : "Sorry, an error occurred. Please try again.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || !user) return;
 
@@ -374,7 +487,11 @@ export default function ChatPage() {
   };
 
   const handleSuggestedQuestion = (question: string) => {
-    handleSendMessage(question);
+    if (isDemoMode) {
+      handleDemoMessage(question);
+    } else {
+      handleSendMessage(question);
+    }
   };
 
   const handleNewChat = () => {
@@ -454,6 +571,15 @@ export default function ChatPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Demo Question Counter */}
+            {isDemoMode && demoQuestionsUsed < 3 && (
+              <div className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-sm font-medium">
+                🎁 {language === "ar"
+                  ? `${3 - demoQuestionsUsed} أسئلة مجانية متبقية`
+                  : `${3 - demoQuestionsUsed} free questions left`}
+              </div>
+            )}
+
             <Button
               variant="ghost"
               size="icon"
@@ -474,8 +600,8 @@ export default function ChatPage() {
         {/* Disclaimer Banner */}
         <DisclaimerBanner language={language} />
 
-        {/* Chat Messages - Scrollable container */}
-        <div className="flex-1 overflow-hidden">
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-6">
           <ChatWindow
             messages={messages}
             isTyping={isTyping}
@@ -488,8 +614,60 @@ export default function ChatPage() {
 
         {/* Chat Input */}
         <div className="shrink-0">
-          <ChatInput language={language} onSend={handleSendMessage} />
+          <ChatInput
+            language={language}
+            onSend={isDemoMode ? handleDemoMessage : handleSendMessage}
+          />
         </div>
+
+        {/* Demo Signup Prompt Modal */}
+        {showDemoSignupPrompt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+            <div className="bg-card border border-border rounded-lg p-6 max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-2xl font-bold mb-3 text-card-foreground">
+                {language === "ar" ? "🎉 لقد جربت قانونك!" : "🎉 You've Tried Qanunak!"}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {language === "ar"
+                  ? "لقد استخدمت أسئلتك التجريبية الثلاثة المجانية. قم بالتسجيل الآن للحصول على:"
+                  : "You've used your 3 free demo questions. Sign up now to get:"}
+              </p>
+              <ul className="mb-6 space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500 mt-1">✓</span>
+                  <span>{language === "ar" ? "أسئلة غير محدودة يومياً" : "Unlimited daily questions"}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500 mt-1">✓</span>
+                  <span>{language === "ar" ? "حفظ سجل المحادثات" : "Conversation history saved"}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500 mt-1">✓</span>
+                  <span>{language === "ar" ? "الوصول إلى قوالب المستندات" : "Access to document templates"}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500 mt-1">✓</span>
+                  <span>{language === "ar" ? "التواصل مع محامين موثقين" : "Connect with verified lawyers"}</span>
+                </li>
+              </ul>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => router.push('/signup')}
+                  className="flex-1 bg-primary text-primary-foreground"
+                >
+                  {language === "ar" ? "إنشاء حساب مجاني" : "Sign Up Free"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/login')}
+                  className="flex-1"
+                >
+                  {language === "ar" ? "تسجيل الدخول" : "Log In"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Subscription Prompt Modal */}
         {showSubscriptionPrompt && (
