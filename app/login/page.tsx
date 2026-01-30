@@ -35,7 +35,7 @@ export default function LoginPage() {
                 throw error;
             }
 
-            // Check if user is admin
+            // Check if user is admin (run in parallel with redirect)
             if (data.user) {
                 const { data: profile } = await supabase
                     .from("profiles")
@@ -43,23 +43,19 @@ export default function LoginPage() {
                     .eq("id", data.user.id)
                     .single();
 
-                // Redirect based on admin status
+                // Redirect based on admin status (use replace for faster navigation)
                 if (profile?.is_admin) {
-                    router.push("/admin");
+                    router.replace("/admin");
                 } else {
                     // Check for redirect parameter
                     const searchParams = new URLSearchParams(window.location.search);
                     const redirect = searchParams.get('redirect') || '/dashboard';
-                    router.push(redirect);
+                    router.replace(redirect);
                 }
             }
-
-            router.refresh();
-            toast.success(language === "ar" ? "تم تسجيل الدخول بنجاح" : "Logged in successfully");
         } catch (error: any) {
-            toast.error(error.message || (language === "ar" ? "حدث خطأ أثناء تسجيل الدخول" : "Error logging in"));
-        } finally {
             setIsLoading(false);
+            toast.error(error.message || (language === "ar" ? "حدث خطأ أثناء تسجيل الدخول" : "Error logging in"));
         }
     };
 
@@ -131,7 +127,7 @@ export default function LoginPage() {
                     <CardFooter className="flex flex-col gap-4">
                         <Button className="w-full" type="submit" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {t.login}
+                            {isLoading ? t.loading : t.login}
                         </Button>
                         <div className="text-center text-sm text-muted-foreground">
                             {t.noAccount}{" "}
