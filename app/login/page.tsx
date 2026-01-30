@@ -26,7 +26,7 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
@@ -35,11 +35,25 @@ export default function LoginPage() {
                 throw error;
             }
 
-            // Check for redirect parameter
-            const searchParams = new URLSearchParams(window.location.search);
-            const redirect = searchParams.get('redirect') || '/dashboard';
+            // Check if user is admin
+            if (data.user) {
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("is_admin")
+                    .eq("id", data.user.id)
+                    .single();
 
-            router.push(redirect);
+                // Redirect based on admin status
+                if (profile?.is_admin) {
+                    router.push("/admin");
+                } else {
+                    // Check for redirect parameter
+                    const searchParams = new URLSearchParams(window.location.search);
+                    const redirect = searchParams.get('redirect') || '/dashboard';
+                    router.push(redirect);
+                }
+            }
+
             router.refresh();
             toast.success(language === "ar" ? "تم تسجيل الدخول بنجاح" : "Logged in successfully");
         } catch (error: any) {
