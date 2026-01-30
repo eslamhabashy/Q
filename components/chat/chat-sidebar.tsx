@@ -13,6 +13,7 @@ import {
   Scale,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 
 interface Conversation {
   id: string;
@@ -43,6 +44,7 @@ export function ChatSidebar({
   onSelectConversation,
 }: ChatSidebarProps) {
   const isRTL = language === "ar";
+  const { theme } = useTheme();
 
   const content = {
     en: {
@@ -81,7 +83,7 @@ export function ChatSidebar({
   };
 
   return (
-    <aside
+    <div
       className={cn(
         "fixed inset-y-0 z-50 flex w-72 flex-col border-r border-sidebar-border bg-sidebar transition-transform lg:static lg:translate-x-0",
         isRTL ? "right-0" : "left-0",
@@ -96,7 +98,7 @@ export function ChatSidebar({
       <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
         <Link href="/" className="flex items-center gap-2">
           <img
-            src={language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png"}
+            src={theme === "dark" ? "/logos/logo-dark.png" : (language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png")}
             alt={language === "ar" ? "قانونك" : "Qanunak"}
             className="h-10 w-auto"
           />
@@ -207,6 +209,6 @@ export function ChatSidebar({
           </Button>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }
