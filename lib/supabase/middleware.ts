@@ -43,11 +43,9 @@ export async function updateSession(request: NextRequest) {
         !request.nextUrl.pathname.startsWith('/signup') &&
         !request.nextUrl.pathname.startsWith('/auth')
     ) {
-        // Protect /chat and /dashboard routes - redirect to login
-        if (
-            request.nextUrl.pathname.startsWith('/chat') ||
-            request.nextUrl.pathname.startsWith('/dashboard')
-        ) {
+        // Protect /dashboard route - redirect to login
+        // Note: /chat is now open for demo mode (3 free questions)
+        if (request.nextUrl.pathname.startsWith('/dashboard')) {
             const url = request.nextUrl.clone()
             url.pathname = '/login'
             url.searchParams.set('redirect', request.nextUrl.pathname)
