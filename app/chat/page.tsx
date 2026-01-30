@@ -565,7 +565,7 @@ export default function ChatPage() {
               <img
                 src={theme === "dark" ? "/logos/logo-dark.png" : (language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png")}
                 alt={language === "ar" ? "قانونك" : "Qanunak"}
-                className="h-12 w-auto"
+                className="h-16 w-auto"
               />
             </Link>
           </div>
@@ -574,7 +574,7 @@ export default function ChatPage() {
             {/* Demo Question Counter */}
             {isDemoMode && demoQuestionsUsed < 3 && (
               <div className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-sm font-medium">
-                🎁 {language === "ar"
+                {language === "ar"
                   ? `${3 - demoQuestionsUsed} أسئلة مجانية متبقية`
                   : `${3 - demoQuestionsUsed} free questions left`}
               </div>

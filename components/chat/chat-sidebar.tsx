@@ -95,12 +95,11 @@ export function ChatSidebar({
       {/* Header */}
       <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
-            <Scale className="h-4 w-4 text-sidebar-primary-foreground" />
-          </div>
-          <span className="font-semibold text-sidebar-foreground">
-            {language === "ar" ? "قانونك" : "Qanunak"}
-          </span>
+          <img
+            src={language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png"}
+            alt={language === "ar" ? "قانونك" : "Qanunak"}
+            className="h-10 w-auto"
+          />
         </Link>
         <Button
           variant="ghost"

@@ -89,8 +89,17 @@ export function ChatWindow({
   }
 
   return (
-    <ScrollArea className="h-full">
-      <div className="mx-auto max-w-3xl space-y-6 p-6">
+    <ScrollArea className="h-full relative">
+      {/* Logo Watermark Background */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
+        <img
+          src={language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png"}
+          alt="Watermark"
+          className="w-96 h-auto"
+        />
+      </div>
+
+      <div className="mx-auto max-w-3xl space-y-6 p-6 relative z-10">
         {messages.map((message) => (
           <div
             key={message.id}
