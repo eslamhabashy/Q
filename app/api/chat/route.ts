@@ -48,11 +48,11 @@ export async function POST(request: NextRequest) {
                 temperature: 0.7,
                 topK: 40,
                 topP: 0.95,
-                maxOutputTokens: 2048,
+                maxOutputTokens: 8192, // Increased to allow complete responses
             },
         });
 
-        // Build chat history starting with system prompt
+        // Build chat history starting with system prompt only
         const chatHistory = [
             {
                 role: 'user',
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
             },
             {
                 role: 'model',
-                parts: [{ text: 'أنا قانونك، المستشار القانوني المصري الذكي. أنا مستعد لمساعدتك في فهم القانون المصري والإجابة على أسئلتك القانونية. كيف يمكنني مساعدتك اليوم؟' }],
+                parts: [{ text: 'فهمت. أنا مستعد للإجابة على الأسئلة القانونية المتعلقة بالقانون المصري.' }],
             },
         ];
 

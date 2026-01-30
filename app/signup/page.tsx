@@ -13,10 +13,13 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SignUpPage() {
+    const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
     const router = useRouter();
     const supabase = createClient();
     const { language } = useLanguage();
@@ -30,6 +33,10 @@ export default function SignUpPage() {
                 email,
                 password,
                 options: {
+                    data: {
+                        full_name: fullName,
+                        phone: phone,
+                    },
                     emailRedirectTo: `${location.origin}/auth/callback`,
                 },
             });
@@ -38,8 +45,9 @@ export default function SignUpPage() {
                 throw error;
             }
 
-            toast.success(language === "ar" ? "تم إنشاء الحساب بنجاح! يرجى التحقق من بريدك الإلكتروني" : "Account created successfully! Please check your email.");
-            router.push("/login");
+            // Show email verification prompt
+            setShowVerificationPrompt(true);
+            toast.success(language === "ar" ? "تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني" : "Account created! Please check your email.");
         } catch (error: any) {
             toast.error(error.message || (language === "ar" ? "حدث خطأ أثناء إنشاء الحساب" : "Error creating account"));
         } finally {
@@ -50,12 +58,25 @@ export default function SignUpPage() {
     const t = {
         title: language === "ar" ? "إنشاء حساب" : "Sign Up",
         description: language === "ar" ? "أدخل بياناتك لإنشاء حساب جديد" : "Enter your details to create a new account",
+        fullName: language === "ar" ? "الاسم الكامل" : "Full Name",
+        fullNamePlaceholder: language === "ar" ? "أدخل اسمك الكامل" : "Enter your full name",
         email: language === "ar" ? "البريد الإلكتروني" : "Email",
+        phone: language === "ar" ? "رقم الهاتف" : "Phone Number",
+        phonePlaceholder: language === "ar" ? "أدخل رقم هاتفك" : "Enter your phone number",
         password: language === "ar" ? "كلمة المرور" : "Password",
         signUp: language === "ar" ? "إنشاء حساب" : "Sign Up",
         hasAccount: language === "ar" ? "لديك حساب بالفعل؟" : "Already have an account?",
         login: language === "ar" ? "تسجيل الدخول" : "Log In",
         loading: language === "ar" ? "جاري التحميل..." : "Loading...",
+        verifyEmail: language === "ar" ? "تحقق من بريدك الإلكتروني" : "Verify Your Email",
+        verifyEmailMessage: language === "ar"
+            ? "تم إرسال رابط التحقق إلى بريدك الإلكتروني. يرجى النقر على الرابط لتفعيل حسابك."
+            : "A verification link has been sent to your email. Please click the link to activate your account.",
+        checkSpam: language === "ar"
+            ? "⚠️ لم تجد البريد الإلكتروني؟ تحقق من صندوق الرسائل غير المرغوب فيها (Spam)"
+            : "⚠️ Can't find the email? Check your spam/junk folder",
+        close: language === "ar" ? "إغلاق" : "Close",
+        goToLogin: language === "ar" ? "الذهاب لتسجيل الدخول" : "Go to Login",
     };
 
     return (
@@ -68,6 +89,17 @@ export default function SignUpPage() {
                 <form onSubmit={handleSignUp}>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
+                            <Label htmlFor="fullName">{t.fullName}</Label>
+                            <Input
+                                id="fullName"
+                                type="text"
+                                placeholder={t.fullNamePlaceholder}
+                                required
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
                             <Label htmlFor="email">{t.email}</Label>
                             <Input
                                 id="email"
@@ -76,6 +108,18 @@ export default function SignUpPage() {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="phone">{t.phone}</Label>
+                            <Input
+                                id="phone"
+                                type="tel"
+                                placeholder={t.phonePlaceholder}
+                                required
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                pattern="[0-9]{10,15}"
                             />
                         </div>
                         <div className="space-y-2">
@@ -118,6 +162,38 @@ export default function SignUpPage() {
                     </CardFooter>
                 </form>
             </Card>
+
+            {/* Email Verification Prompt Modal */}
+            {showVerificationPrompt && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <Card className="max-w-md w-full">
+                        <CardHeader>
+                            <CardTitle>{t.verifyEmail}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <p className="text-sm">{t.verifyEmailMessage}</p>
+                            <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                                <p className="text-sm font-medium">{t.checkSpam}</p>
+                            </div>
+                        </CardContent>
+                        <CardFooter className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowVerificationPrompt(false)}
+                                className="flex-1"
+                            >
+                                {t.close}
+                            </Button>
+                            <Button
+                                onClick={() => router.push('/login')}
+                                className="flex-1"
+                            >
+                                {t.goToLogin}
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }

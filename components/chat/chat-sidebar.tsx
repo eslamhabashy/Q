@@ -24,19 +24,23 @@ interface Conversation {
 interface ChatSidebarProps {
   language: "en" | "ar";
   conversations: Conversation[];
+  activeConversationId: string | null;
   remainingQuestions: number;
   isOpen: boolean;
   onClose: () => void;
   onNewChat: () => void;
+  onSelectConversation: (conversationId: string) => void;
 }
 
 export function ChatSidebar({
   language,
   conversations,
+  activeConversationId,
   remainingQuestions,
   isOpen,
   onClose,
   onNewChat,
+  onSelectConversation,
 }: ChatSidebarProps) {
   const isRTL = language === "ar";
 
@@ -131,7 +135,13 @@ export function ChatSidebar({
             {conversations.map((conversation) => (
               <button
                 key={conversation.id}
-                className="flex w-full flex-col gap-1 rounded-lg px-3 py-2 text-left transition-colors hover:bg-sidebar-accent"
+                onClick={() => onSelectConversation(conversation.id)}
+                className={cn(
+                  "flex w-full flex-col gap-1 rounded-lg px-3 py-2 text-left transition-colors",
+                  activeConversationId === conversation.id
+                    ? "bg-sidebar-accent border border-sidebar-primary/20"
+                    : "hover:bg-sidebar-accent"
+                )}
               >
                 <div className="flex items-center gap-2">
                   <MessageSquare className="h-4 w-4 shrink-0 text-sidebar-foreground/60" />

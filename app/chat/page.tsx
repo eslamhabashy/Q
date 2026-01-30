@@ -382,6 +382,15 @@ export default function ChatPage() {
     setActiveConversationId(null);
   };
 
+  const handleSelectConversation = (conversationId: string) => {
+    const selectedConv = conversations.find(c => c.id === conversationId);
+    if (selectedConv) {
+      setActiveConversationId(conversationId);
+      setMessages(selectedConv.messages);
+      setSidebarOpen(false); // Close sidebar on mobile after selection
+    }
+  };
+
   const content = {
     en: {
       title: "Qanunak",
@@ -414,10 +423,12 @@ export default function ChatPage() {
       <ChatSidebar
         language={language}
         conversations={conversations}
+        activeConversationId={activeConversationId}
         remainingQuestions={remainingQuestions}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onNewChat={handleNewChat}
+        onSelectConversation={handleSelectConversation}
       />
 
       {/* Main Chat Area */}
