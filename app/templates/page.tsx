@@ -187,7 +187,7 @@ export default function TemplatesPage() {
 
           <Link href="/" className="flex items-center gap-2">
             <img
-              src={language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png"}
+              src={theme === "dark" ? "/logos/logo-dark.png" : (language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png")}
               alt={language === "ar" ? "قانونك" : "Qanunak"}
               className="h-20 w-auto"
             />

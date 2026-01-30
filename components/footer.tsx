@@ -1,14 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { Scale } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 interface FooterProps {
   language: "en" | "ar";
 }
 
 export function Footer({ language }: FooterProps) {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const isRTL = language === "ar";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Determine which logo to show based on theme and language
+  const getLogoSrc = () => {
+    if (!mounted) return language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png";
+
+    if (theme === "dark") {
+      return "/logos/logo-dark.png";
+    }
+    return language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png";
+  };
 
   const content = {
     en: {
@@ -81,12 +98,11 @@ export function Footer({ language }: FooterProps) {
           {/* Brand Column */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
-                <Scale className="h-5 w-5 text-accent-foreground" />
-              </div>
-              <span className="text-xl font-bold text-primary-foreground">
-                {language === "ar" ? "قانونك" : "Qanunak"}
-              </span>
+              <img
+                src={getLogoSrc()}
+                alt={language === "ar" ? "قانونك" : "Qanunak"}
+                className="h-20 w-auto"
+              />
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-primary-foreground/70">
               {t.description}

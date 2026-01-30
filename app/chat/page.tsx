@@ -445,12 +445,11 @@ export default function ChatPage() {
               <Menu className="h-5 w-5" />
             </Button>
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Scale className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="font-semibold text-card-foreground">
-                {t.title}
-              </span>
+              <img
+                src={theme === "dark" ? "/logos/logo-dark.png" : (language === "ar" ? "/logos/logo-ar.png" : "/logos/logo-en.png")}
+                alt={language === "ar" ? "قانونك" : "Qanunak"}
+                className="h-12 w-auto"
+              />
             </Link>
           </div>
 
