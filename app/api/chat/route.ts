@@ -32,7 +32,7 @@ You are now qanunak.com, ready to answer all legal questions under Egyptian law 
 
 export async function POST(request: NextRequest) {
     try {
-        const { message, language } = await request.json();
+        const { message, language, history } = await request.json();
 
         if (!message) {
             return NextResponse.json(
@@ -52,18 +52,31 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Create chat with system instructions
+        // Build chat history starting with system prompt
+        const chatHistory = [
+            {
+                role: 'user',
+                parts: [{ text: SYSTEM_PROMPT }],
+            },
+            {
+                role: 'model',
+                parts: [{ text: 'أنا قانونك، المستشار القانوني المصري الذكي. أنا مستعد لمساعدتك في فهم القانون المصري والإجابة على أسئلتك القانونية. كيف يمكنني مساعدتك اليوم؟' }],
+            },
+        ];
+
+        // Add conversation history if provided (converts to Gemini format)
+        if (history && Array.isArray(history) && history.length > 0) {
+            history.forEach((msg: { role: string; content: string }) => {
+                chatHistory.push({
+                    role: msg.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: msg.content }],
+                });
+            });
+        }
+
+        // Create chat with full history
         const chat = model.startChat({
-            history: [
-                {
-                    role: 'user',
-                    parts: [{ text: SYSTEM_PROMPT }],
-                },
-                {
-                    role: 'model',
-                    parts: [{ text: 'أنا قانونك، المستشار القانوني المصري الذكي. أنا مستعد لمساعدتك في فهم القانون المصري والإجابة على أسئلتك القانونية. كيف يمكنني مساعدتك اليوم؟' }],
-                },
-            ],
+            history: chatHistory,
         });
 
         // Send message and get response

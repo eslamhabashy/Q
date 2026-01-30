@@ -185,7 +185,15 @@ export default function ChatPage() {
     setIsTyping(true);
 
     try {
-      // Call Gemini API
+      // Build conversation history (limit to last 10 messages for context)
+      const conversationHistory = messages
+        .slice(-10) // Last 10 messages to avoid token overflow
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content,
+        }));
+
+      // Call Gemini API with conversation history
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -194,6 +202,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           message: userMessage,
           language: language,
+          history: conversationHistory, // Include conversation context
         }),
       });
 
