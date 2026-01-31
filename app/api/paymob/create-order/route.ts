@@ -45,19 +45,17 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get user profile
+        // Get user profile (optional - use auth data as fallback)
         const { data: profile } = await supabase
             .from('profiles')
             .select('email, full_name, phone')
             .eq('id', user.id)
             .single();
 
-        if (!profile) {
-            return NextResponse.json(
-                { error: 'Profile not found' },
-                { status: 404 }
-            );
-        }
+        // Use profile data if available, otherwise fallback to user auth data
+        const userEmail = profile?.email || user.email || 'user@qanunak.com';
+        const userName = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+        const userPhone = profile?.phone || user.user_metadata?.phone || '+201000000000';
 
         // Get pricing
         const amountCents = getSubscriptionPricing(tier, billingCycle);
@@ -82,12 +80,12 @@ export async function POST(request: NextRequest) {
         );
 
         // Prepare billing data
-        const nameParts = (profile.full_name || user.email || '').split(' ');
+        const nameParts = userName.split(' ');
         const billingData = {
-            email: profile.email || user.email || 'user@qanunak.com',
+            email: userEmail,
             first_name: nameParts[0] || 'User',
             last_name: nameParts.slice(1).join(' ') || 'Qanunak',
-            phone_number: profile.phone || '+201000000000',
+            phone_number: userPhone,
         };
 
         // Determine integration ID based on payment method
