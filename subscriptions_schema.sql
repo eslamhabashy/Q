@@ -37,6 +37,10 @@ CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 -- Enable RLS on payments table
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own payments" ON payments;
+DROP POLICY IF EXISTS "Admins can view all payments" ON payments;
+
 -- Create policy for users to view their own payments
 CREATE POLICY "Users can view own payments"
   ON payments FOR SELECT
