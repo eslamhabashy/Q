@@ -49,7 +49,7 @@ export default function LoginPage() {
                 } else {
                     // Check for redirect parameter
                     const searchParams = new URLSearchParams(window.location.search);
-                    const redirect = searchParams.get('redirect') || '/chat';
+                    const redirect = searchParams.get('redirect') || '/';
                     router.replace(redirect);
                 }
             }
