@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
+import { PaymentModal } from "@/components/payment/payment-modal";
 
 interface PricingSectionProps {
   language: "en" | "ar";
 }
 
 export function PricingSection({ language }: PricingSectionProps) {
-  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [selectedTier, setSelectedTier] = useState<"basic" | "pro" | "premium">("basic");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const isRTL = language === "ar";
 
@@ -190,8 +191,8 @@ export function PricingSection({ language }: PricingSectionProps) {
             <Card
               key={index}
               className={`relative flex flex-col border-2 ${plan.popular
-                  ? "border-accent shadow-lg shadow-accent/10"
-                  : "border-border"
+                ? "border-accent shadow-lg shadow-accent/10"
+                : "border-border"
                 }`}
             >
               {plan.popular && (
@@ -240,8 +241,8 @@ export function PricingSection({ language }: PricingSectionProps) {
                 ) : (
                   <Button
                     className={`w-full ${plan.popular
-                        ? "bg-accent text-accent-foreground hover:bg-accent/90"
-                        : ""
+                      ? "bg-accent text-accent-foreground hover:bg-accent/90"
+                      : ""
                       }`}
                     variant={plan.popular ? "default" : "outline"}
                     onClick={() => handleCTAClick(plan)}
@@ -255,28 +256,12 @@ export function PricingSection({ language }: PricingSectionProps) {
         </div>
       </div>
 
-      {/* Payment Modal - TODO: Will be created next */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-background p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4">
-              Payment Modal (Coming Soon)
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Selected tier: {selectedTier}
-            </p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Paymob integration will be implemented here.
-            </p>
-            <Button
-              onClick={() => setShowPaymentModal(false)}
-              className="w-full"
-            >
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        preselectedTier={selectedTier}
+      />
     </section>
   );
 }
