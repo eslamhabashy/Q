@@ -13,6 +13,9 @@ import { useTheme } from "next-themes";
 import { useAuth } from "@/components/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useSubscription } from "@/hooks/use-subscription";
+import { UpgradeModal } from "@/components/chat/upgrade-modal";
+import { PaymentModal } from "@/components/payment/payment-modal";
 
 interface Message {
   id: string;
@@ -56,14 +59,27 @@ export default function ChatPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  // Subscription Hook
+  const {
+    tier,
+    dailyQuestionCount,
+    dailyLimit,
+    canAskQuestion,
+    incrementQuestionCount,
+    isExpired,
+    checkSubscription
+  } = useSubscription();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [remainingQuestions, setRemainingQuestions] = useState(3);
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [showSubscriptionPrompt, setShowSubscriptionPrompt] = useState(false);
+
+  // Modals state
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<string>("basic");
 
   // Demo mode state
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -167,41 +183,6 @@ export default function ChatPage() {
     loadConversations();
   }, [user, supabase]);
 
-  // Load and check user's daily usage
-  useEffect(() => {
-    if (!user) return;
-
-    const checkDailyUsage = async () => {
-      try {
-        // Call the check_and_reset_daily_usage function
-        const { data, error } = await supabase.rpc('check_and_reset_daily_usage', {
-          p_user_id: user.id
-        });
-
-        if (error) {
-          console.error('Error checking daily usage:', error);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          const usage = data[0];
-          const remaining = Math.max(0, 3 - usage.messages_sent);
-          setRemainingQuestions(remaining);
-          setIsSubscribed(usage.is_subscribed);
-
-          // Show prompt if limit reached and not subscribed
-          if (remaining === 0 && !usage.is_subscribed) {
-            setShowSubscriptionPrompt(true);
-          }
-        }
-      } catch (error) {
-        console.error('Error in checkDailyUsage:', error);
-      }
-    };
-
-    checkDailyUsage();
-  }, [user, supabase]);
-
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -209,6 +190,19 @@ export default function ChatPage() {
 
   const handleThemeToggle = () => {
     setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const handleError = (error: any) => {
+    console.error("AI Response Error:", error);
+    const errorMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      role: "assistant",
+      content: language === "ar"
+        ? "عذراً، حدث خطأ في الحصول على الرد. هل يمكنك إعادة صياغة سؤالك؟"
+        : "Sorry, there was an error getting a response. Could you rephrase your question?",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, errorMessage]);
   };
 
   const simulateAIResponse = async (userMessage: string, conversationId: string) => {
@@ -271,19 +265,7 @@ export default function ChatPage() {
         .eq('id', conversationId);
 
     } catch (error) {
-      console.error('Error getting AI response:', error);
-
-      // Fallback error message
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: language === "ar"
-          ? "عذراً، حدث خطأ في الحصول على الرد. يرجى المحاولة مرة أخرى."
-          : "Sorry, there was an error getting a response. Please try again.",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, errorMessage]);
+      handleError(error);
     } finally {
       setIsTyping(false);
     }
@@ -375,9 +357,9 @@ export default function ChatPage() {
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || !user) return;
 
-    // Check daily limit (unless subscribed)
-    if (!isSubscribed && remainingQuestions <= 0) {
-      setShowSubscriptionPrompt(true);
+    // Check daily limit and subscription status using hook
+    if (!canAskQuestion) {
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -412,9 +394,6 @@ export default function ChatPage() {
 
         if (convError) {
           console.error('Error creating conversation:', convError);
-          console.error('Error details:', JSON.stringify(convError, null, 2));
-          console.error('Error message:', convError.message);
-          console.error('Error code:', convError.code);
           return;
         }
 
@@ -454,26 +433,8 @@ export default function ChatPage() {
         return;
       }
 
-      // Increment message count in database (unless subscribed)
-      if (!isSubscribed) {
-        try {
-          const { data: newCount, error: countError } = await supabase.rpc('increment_message_count', {
-            p_user_id: user.id
-          });
-
-          if (!countError && newCount !== null) {
-            const remaining = Math.max(0, 3 - newCount);
-            setRemainingQuestions(remaining);
-
-            // Show subscription prompt if limit reached
-            if (remaining === 0) {
-              setShowSubscriptionPrompt(true);
-            }
-          }
-        } catch (error) {
-          console.error('Error incrementing message count:', error);
-        }
-      }
+      // Increment message count using hook
+      await incrementQuestionCount();
 
       // Generate AI response - conversationId is guaranteed to be string at this point
       if (conversationId) {
@@ -483,6 +444,7 @@ export default function ChatPage() {
 
     } catch (error) {
       console.error('Error in handleSendMessage:', error);
+      handleError(error);
     }
   };
 
@@ -508,20 +470,15 @@ export default function ChatPage() {
     }
   };
 
-  const content = {
-    en: {
-      title: "Qanunak",
-      newChat: "New Chat",
-      requestLawyer: "Request Lawyer Review",
-    },
-    ar: {
-      title: "قانونك",
-      newChat: "محادثة جديدة",
-      requestLawyer: "طلب مراجعة محامٍ",
-    },
+  const handleUpgradeSelect = (tier: string) => {
+    setSelectedTier(tier);
+    setShowUpgradeModal(false);
+    setShowPaymentModal(true);
   };
 
-  const t = content[language];
+  const t = {
+    title: language === "ar" ? "قانونك" : "Qanunak",
+  };
 
   return (
     <div
@@ -541,7 +498,8 @@ export default function ChatPage() {
         language={language}
         conversations={conversations}
         activeConversationId={activeConversationId}
-        remainingQuestions={isDemoMode ? (3 - demoQuestionsUsed) : remainingQuestions}
+        // Show demo remaining for demo mode, or tier-based remaining for authenticated
+        remainingQuestions={isDemoMode ? (3 - demoQuestionsUsed) : (dailyLimit === Infinity ? 999 : (dailyLimit - dailyQuestionCount))}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onNewChat={handleNewChat}
@@ -567,17 +525,31 @@ export default function ChatPage() {
                 alt={language === "ar" ? "قانونك" : "Qanunak"}
                 className="h-16 w-auto"
               />
+              <span className="sr-only">{t.title}</span>
             </Link>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Demo Question Counter */}
-            {isDemoMode && demoQuestionsUsed < 3 && (
+            {/* Question Counter (Demo or Free/Basic) */}
+            {(isDemoMode || (tier !== 'premium' && dailyLimit !== Infinity)) && (
               <div className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-sm font-medium">
                 {language === "ar"
-                  ? `${3 - demoQuestionsUsed} أسئلة مجانية متبقية`
-                  : `${3 - demoQuestionsUsed} free questions left`}
+                  ? `${isDemoMode ? (3 - demoQuestionsUsed) : Math.max(0, dailyLimit - dailyQuestionCount)} أسئلة متبقية`
+                  : `${isDemoMode ? (3 - demoQuestionsUsed) : Math.max(0, dailyLimit - dailyQuestionCount)} questions left`}
               </div>
+            )}
+
+            {/* Upgrade Button for Free/Basic Users */}
+            {!isDemoMode && tier !== 'premium' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden md:flex gap-1 text-xs h-8 border-primary text-primary hover:bg-primary/10"
+                onClick={() => setShowUpgradeModal(true)}
+              >
+                <Scale className="h-3 w-3" />
+                {language === "ar" ? "ترقية الخطة" : "Upgrade Plan"}
+              </Button>
             )}
 
             <Button
@@ -669,36 +641,23 @@ export default function ChatPage() {
           </div>
         )}
 
-        {/* Subscription Prompt Modal */}
-        {showSubscriptionPrompt && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowSubscriptionPrompt(false)}>
-            <div className="bg-card border border-border rounded-lg p-6 max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-xl font-bold mb-3 text-card-foreground">
-                {language === "ar" ? "لقد وصلت إلى الحد اليومي" : "Daily Limit Reached"}
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                {language === "ar"
-                  ? "لقد استخدمت جميع الرسائل المجانية الثلاث لليوم. اشترك للحصول على رسائل غير محدودة والمزيد من الميزات!"
-                  : "You've used all 3 free messages for today. Subscribe for unlimited messages and premium features!"}
-              </p>
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => router.push('/pricing')}
-                  className="flex-1"
-                >
-                  {language === "ar" ? "عرض الخطط" : "View Plans"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowSubscriptionPrompt(false)}
-                  className="flex-1"
-                >
-                  {language === "ar" ? "إغلاق" : "Close"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Subscription Upgrade Modal */}
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          onUpgrade={handleUpgradeSelect}
+          currentTier={tier}
+          currentUsage={dailyQuestionCount}
+          dailyLimit={dailyLimit}
+          reason={isExpired ? "subscription_expired" : "limit_reached"}
+        />
+
+        {/* Payment Modal */}
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          preselectedTier={selectedTier}
+        />
       </div>
     </div>
   );
