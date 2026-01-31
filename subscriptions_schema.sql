@@ -5,7 +5,9 @@ ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'inactive',
 ADD COLUMN IF NOT EXISTS paymob_customer_id TEXT,
 ADD COLUMN IF NOT EXISTS paymob_subscription_id TEXT,
 ADD COLUMN IF NOT EXISTS subscription_end_date TIMESTAMPTZ,
-ADD COLUMN IF NOT EXISTS billing_cycle TEXT DEFAULT 'monthly';
+ADD COLUMN IF NOT EXISTS billing_cycle TEXT DEFAULT 'monthly',
+ADD COLUMN IF NOT EXISTS daily_question_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS last_question_reset TIMESTAMPTZ DEFAULT NOW();
 
 -- Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_profiles_subscription_tier ON profiles(subscription_tier);
@@ -66,3 +68,42 @@ CREATE TRIGGER update_payments_updated_at
     BEFORE UPDATE ON payments
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- Function to increment daily question count with automatic reset
+CREATE OR REPLACE FUNCTION increment_daily_questions(user_id UUID)
+RETURNS void AS $$
+DECLARE
+  last_reset TIMESTAMPTZ;
+BEGIN
+  -- Get the last reset time
+  SELECT last_question_reset INTO last_reset
+  FROM profiles
+  WHERE id = user_id;
+
+  -- Check if we need to reset (more than 24 hours since last reset)
+  IF last_reset IS NULL OR (NOW() - last_reset) > INTERVAL '24 hours' THEN
+    -- Reset the count
+    UPDATE profiles
+    SET daily_question_count = 1,
+        last_question_reset = NOW()
+    WHERE id = user_id;
+  ELSE
+    -- Just increment
+    UPDATE profiles
+    SET daily_question_count = daily_question_count + 1
+    WHERE id = user_id;
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to manually reset daily question counts (for testing or admin use)
+CREATE OR REPLACE FUNCTION reset_daily_questions()
+RETURNS void AS $$
+BEGIN
+  UPDATE profiles
+  SET daily_question_count = 0,
+      last_question_reset = NOW()
+  WHERE (NOW() - last_question_reset) > INTERVAL '24 hours'
+     OR last_question_reset IS NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
